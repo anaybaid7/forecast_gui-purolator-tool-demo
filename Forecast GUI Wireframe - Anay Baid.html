@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Purolator Volume Planner - Product Documentation</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red:   #C8102E;
+    --blue:  #003865;
+    --blue2: #0070c0;
+    --grey1: #fafafa;
+    --grey2: #f0f0f0;
+    --grey3: #e0e0e0;
+    --grey4: #aaa;
+    --grey5: #666;
+    --ink:   #1a1a1a;
+    --green: #107c10;
+    --orange:#e65100;
+    --mono:  'Courier New', Courier, monospace;
+    --sans:  Georgia, 'Times New Roman', serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink);
+    background: #fff;
+    line-height: 1.55;
+  }
+
+  /* ── PAGE LAYOUT ── */
+  .page { max-width: 960px; margin: 0 auto; padding: 48px 40px; }
+
+  /* ── COVER ── */
+  .cover {
+    padding: 64px 0 48px;
+    border-bottom: 3px solid var(--red);
+    margin-bottom: 56px;
+  }
+  .cover-eyebrow {
+    font-size: 13px; font-weight: normal; color: var(--grey5); margin-bottom: 10px;
+  }
+  .cover-title {
+    font-size: 36px; font-weight: 600; color: var(--blue);
+    line-height: 1.15; margin-bottom: 10px;
+  }
+  .cover-sub {
+    font-size: 15px; color: var(--grey5); margin-bottom: 28px;
+  }
+  .cover-meta {
+    display: flex; gap: 32px; flex-wrap: wrap;
+  }
+  .cover-meta-item { font-size: 12px; }
+  .cover-meta-item .label { color: var(--grey4); font-size: 11px; display: block; margin-bottom: 2px; }
+  .cover-meta-item .val { font-weight: 600; color: var(--ink); }
+
+  /* ── SECTION ── */
+  .section { margin-bottom: 64px; }
+  .section-header {
+    display: flex; align-items: baseline; gap: 12px;
+    border-bottom: 1px solid var(--grey3);
+    padding-bottom: 10px; margin-bottom: 24px;
+  }
+  .section-num {
+    font-size: 18px; color: var(--ink);
+    font-weight: 600; flex-shrink: 0;
+  }
+  .section-title {
+    font-size: 18px; font-weight: 600; color: var(--ink);
+  }
+
+  h3 { font-size: 13px; font-weight: 600; color: var(--ink); margin: 20px 0 8px; }
+  p  { font-size: 13px; color: var(--grey5); line-height: 1.65; margin-bottom: 10px; }
+  ul { padding-left: 18px; margin-bottom: 10px; }
+  li { font-size: 13px; color: var(--grey5); line-height: 1.65; margin-bottom: 3px; }
+  strong { color: var(--ink); font-weight: 600; }
+  code { font-family: var(--mono); font-size: 11px; background: var(--grey2); padding: 1px 5px; border-radius: 3px; }
+
+  /* ── PIPELINE DIAGRAM ── */
+  .pipeline {
+    display: flex; align-items: stretch; gap: 0;
+    border: 1px solid var(--grey3); border-radius: 6px; overflow: hidden;
+    margin: 20px 0;
+  }
+  .pipe-step {
+    flex: 1; padding: 14px 12px; border-right: 1px solid var(--grey3);
+    position: relative;
+  }
+  .pipe-step:last-child { border-right: none; }
+  .pipe-step.active { background: #fff8f8; border-top: 3px solid var(--red); }
+  .pipe-step:not(.active) { background: var(--grey1); border-top: 3px solid transparent; }
+  .pipe-num { font-family: var(--mono); font-size: 10px; color: var(--grey4); margin-bottom: 4px; }
+  .pipe-name { font-size: 12px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+  .pipe-step.active .pipe-name { color: var(--red); }
+  .pipe-desc { font-size: 10px; color: var(--grey4); line-height: 1.5; }
+  .pipe-arr {
+    position: absolute; right: -8px; top: 50%; transform: translateY(-50%);
+    width: 15px; height: 15px; z-index: 2;
+    font-size: 10px; color: var(--grey4); display: flex; align-items: center;
+  }
+
+  /* ── WIREFRAME ── */
+  .wf-wrap {
+    border: 1px solid var(--grey3); border-radius: 8px;
+    overflow: hidden; margin: 16px 0 8px; background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+
+  /* nav bar */
+  .wf-nav {
+    background: #1a1a1a; height: 40px; display: flex; align-items: center;
+    padding: 0 14px; gap: 12px; flex-shrink: 0;
+  }
+  .wf-nav-logo { color: #fff; font-size: 12px; font-weight: 600; }
+  .wf-nav-links { display: flex; gap: 3px; margin-left: auto; }
+  .wf-nav-link {
+    padding: 4px 10px; border-radius: 4px; font-size: 11px; color: #aaa;
+  }
+  .wf-nav-link.active { background: var(--blue2); color: #fff; }
+
+  /* two-column layout */
+  .wf-body { display: flex; }
+  .wf-side {
+    width: 210px; background: var(--grey1); border-right: 1px solid var(--grey3);
+    padding: 12px 10px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px;
+  }
+  .wf-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* sidebar elements */
+  .wf-sec {
+    font-size: 9px; font-weight: 700; color: var(--grey4);
+    text-transform: uppercase; letter-spacing: .06em; margin-bottom: 5px;
+  }
+  .wf-upload-btn {
+    display: block; padding: 7px 8px; border-radius: 4px; font-size: 11px;
+    font-weight: 500; text-align: center; border: 1px solid;
+    margin-bottom: 4px;
+  }
+  .wf-upload-btn.actual  { background: #f0f9f0; color: var(--green); border-color: #9dc39d; }
+  .wf-upload-btn.forecast{ background: #f0f5ff; color: var(--blue2); border-color: #9dc3e6; }
+  .wf-upload-btn.daily   { background: #f5f0ff; color: #5b21b6; border-color: #c4b5fd; }
+  .wf-upload-btn.ok { font-size: 10px; }
+
+  .wf-toggle { display: flex; gap: 3px; margin-bottom: 4px; }
+  .wf-toggle-btn {
+    flex: 1; padding: 4px; border-radius: 4px; border: 1px solid var(--grey3);
+    font-size: 10px; font-weight: 600; text-align: center; background: #fff; color: var(--grey5);
+  }
+  .wf-toggle-btn.on { background: var(--blue2); color: #fff; border-color: var(--blue2); }
+  .wf-toggle-btn.prophet.on { background: #1b6b1b; border-color: #1b6b1b; }
+
+  .wf-pill-wrap { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 4px; }
+  .wf-pill {
+    padding: 2px 7px; border-radius: 10px; border: 1px solid var(--grey3);
+    font-size: 10px; font-weight: 500; background: #fff; color: var(--grey5); cursor: pointer;
+  }
+  .wf-pill.on { background: var(--blue2); color: #fff; border-color: var(--blue2); }
+
+  .wf-tlist {
+    border: 1px solid var(--grey3); border-radius: 4px; background: #fff; overflow: hidden;
+  }
+  .wf-titem {
+    padding: 3px 7px; font-size: 10px; color: var(--grey5);
+    border-bottom: 1px solid var(--grey2); display: flex; align-items: center; gap: 5px;
+  }
+  .wf-titem:last-child { border-bottom: none; }
+  .wf-titem .tid { font-size: 9px; color: var(--grey4); min-width: 20px; font-weight: 700; }
+  .wf-chk { width: 10px; height: 10px; border: 1px solid var(--grey3); border-radius: 2px; flex-shrink: 0; }
+
+  .wf-btn-row { display: flex; gap: 4px; }
+  .wf-btn {
+    flex: 1; padding: 4px 6px; border: 1px solid var(--grey3); border-radius: 4px;
+    font-size: 10px; text-align: center; background: #fff; color: var(--grey5);
+  }
+  .wf-btn.go   { background: var(--blue2); color: #fff; border-color: var(--blue2); flex: 2; }
+  .wf-btn.ex   { background: var(--green); color: #fff; border-color: var(--green); }
+
+  .wf-cl-item {
+    padding: 4px 7px; font-size: 10px; border-bottom: 1px solid var(--grey2);
+    display: grid; grid-template-columns: 28px 1fr 44px; gap: 4px;
+  }
+  .wf-cl-wk { color: var(--blue2); font-weight: 700; }
+  .wf-cl-desc { color: var(--grey5); }
+  .wf-cl-val { color: var(--green); font-weight: 600; text-align: right; font-family: var(--mono); font-size: 9px; }
+
+  /* chart bar */
+  .wf-bar {
+    background: #fff; border-bottom: 1px solid var(--grey3);
+    padding: 7px 14px; display: flex; align-items: center; gap: 8px;
+    flex-wrap: wrap; min-height: 38px;
+  }
+  .wf-bar-title { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .wf-bar-sub { font-size: 11px; color: var(--grey4); }
+  .wf-lp {
+    font-size: 9px; padding: 1px 6px; border-radius: 8px; font-weight: 600;
+  }
+  .lp-a   { background: #e6f4e6; color: var(--green); }
+  .lp-cur { background: #fde8e8; color: #c00; }
+  .lp-f   { background: #ddeeff; color: var(--blue2); }
+  .lp-m   { background: #fff3e0; color: var(--orange); }
+  .lp-p27 { background: #e8f5e8; color: #145214; border: 1px dashed #1b6b1b; }
+
+  /* chart area */
+  .wf-chart-area {
+    height: 190px; background: #fff; border-bottom: 1px solid var(--grey3);
+    padding: 10px 14px; position: relative; overflow: hidden;
+  }
+  .wf-chart-svg { width: 100%; height: 100%; }
+
+  /* kpi bar */
+  .wf-kpi-bar {
+    background: #fff; border-bottom: 1px solid var(--grey3);
+    padding: 6px 14px; display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .wf-kpi {
+    background: var(--grey2); border: 1px solid var(--grey3);
+    border-radius: 4px; padding: 5px 10px; min-width: 110px; text-align: center;
+  }
+  .wf-kpi-val { font-size: 16px; font-weight: 700; }
+  .wf-kpi-val.red   { color: #c00; }
+  .wf-kpi-val.green { color: var(--green); }
+  .wf-kpi-val.blue  { color: var(--blue2); }
+  .wf-kpi-lbl { font-size: 9px; color: var(--grey4); margin-top: 1px; }
+
+  .wf-kpi-sel-bar {
+    background: #eef4ff; border-bottom: 1px solid #c5d8f7;
+    padding: 5px 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  }
+  .wf-kpi-sel-label { font-size: 9px; font-weight: 700; color: var(--blue2); text-transform: uppercase; letter-spacing: .05em; }
+  .wf-kpi-sel {
+    background: #fff; border: 1px solid #c5d8f7; border-radius: 4px;
+    padding: 3px 8px; min-width: 90px; text-align: center;
+  }
+  .wf-kpi-sel .v { font-size: 14px; font-weight: 700; color: var(--blue2); }
+  .wf-kpi-sel .l { font-size: 9px; color: var(--grey4); }
+
+  /* excel bar */
+  .wf-excel-bar {
+    background: var(--grey1); border-bottom: 1px solid var(--grey3);
+    padding: 4px 10px; display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+  }
+  .wf-cell-ref {
+    font-family: var(--mono); font-size: 10px; color: var(--blue2);
+    background: #fff; border: 1px solid var(--grey3); border-radius: 3px;
+    padding: 2px 6px; white-space: nowrap;
+  }
+  .wf-xbtn {
+    padding: 2px 7px; border: 1px solid var(--grey3); border-radius: 3px;
+    background: #fff; font-size: 10px; color: var(--grey5); white-space: nowrap;
+  }
+  .wf-xbtn.danger { color: #c00; border-color: #fcc; }
+  .wf-xsep { width: 1px; height: 14px; background: var(--grey3); }
+  .wf-op-group { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+  .wf-op-label { font-size: 10px; color: var(--grey4); }
+  .wf-op-sel {
+    padding: 2px 5px; font-size: 10px; border: 1px solid var(--grey3);
+    border-radius: 3px; background: #fff;
+  }
+  .wf-op-num {
+    width: 55px; padding: 2px 4px; font-size: 10px; border: 1px solid var(--grey3);
+    border-radius: 3px; background: #fff; font-family: var(--mono);
+  }
+  .wf-apply {
+    padding: 3px 10px; border: none; border-radius: 3px;
+    background: var(--blue2); color: #fff; font-size: 10px; font-weight: 700;
+  }
+
+  /* table */
+  .wf-table-wrap { overflow: auto; flex: 1; }
+  .wf-tbl { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; }
+  .wf-tbl th {
+    background: var(--grey2); padding: 5px 7px; text-align: left;
+    border-bottom: 2px solid var(--grey3); font-size: 10px; font-weight: 600;
+    color: var(--grey5); white-space: nowrap; position: sticky; top: 0; z-index: 1;
+    cursor: pointer;
+  }
+  .wf-tbl th:nth-child(1) { width: 36px; }
+  .wf-tbl th:nth-child(2) { width: 44px; }
+  .wf-tbl th:nth-child(3) { width: 78px; }
+  .wf-tbl th:nth-child(4) { width: 70px; }
+  .wf-tbl th:nth-child(5) { width: 64px; }
+  .wf-tbl th:nth-child(6) { width: 64px; }
+  .wf-tbl th:nth-child(7) { width: 28px; }
+  .wf-tbl td {
+    padding: 3px 7px; border-bottom: 1px solid var(--grey2);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px;
+  }
+  .wf-tbl tr.sel td { background: #cfe3ff !important; outline: 1px solid var(--blue2); }
+  .wf-tbl tr.mod td { background: #fffaf3; }
+  .wf-tbl .fc { color: var(--blue2); font-weight: 600; }
+  .wf-tbl .fm { color: var(--orange); font-weight: 600; }
+  .wf-tbl .red { color: #c00; }
+  .wf-tbl .grn { color: var(--green); }
+  .wf-tbl .pill {
+    font-size: 9px; padding: 1px 5px; border-radius: 7px; font-weight: 600;
+  }
+  .wf-tbl .pill.base { background: #e6f4e6; color: var(--green); }
+  .wf-tbl .pill.mod  { background: #fff3e0; color: var(--orange); }
+
+  /* daily distribution page */
+  .wf-dd-body { display: flex; height: 540px; }
+  .wf-dd-side {
+    width: 180px; background: var(--grey1); border-right: 1px solid var(--grey3);
+    padding: 10px 9px; flex-shrink: 0; display: flex; flex-direction: column; gap: 9px; overflow: auto;
+  }
+  .wf-dd-main { flex: 1; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; overflow: auto; }
+
+  .wf-dd-select {
+    width: 100%; padding: 4px 6px; font-size: 10px; border: 1px solid var(--grey3);
+    border-radius: 4px; background: #fff; color: var(--ink);
+  }
+
+  .wf-dd-card {
+    background: #fff; border: 1px solid var(--grey3); border-radius: 6px; padding: 12px 14px;
+  }
+  .wf-dd-card h4 {
+    font-size: 11px; font-weight: 700; color: var(--blue2); margin-bottom: 8px;
+  }
+
+  .wf-chart-controls {
+    display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 10px;
+  }
+  .wf-chart-title { font-size: 11px; font-weight: 700; color: var(--ink); flex: 1; }
+  .wf-view-btn {
+    padding: 3px 9px; border: 1px solid var(--grey3); border-radius: 3px;
+    font-size: 10px; font-weight: 600; background: #fff; color: var(--grey5);
+  }
+  .wf-view-btn.on { background: var(--blue2); color: #fff; border-color: var(--blue2); }
+  .wf-sep-v { width: 1px; height: 16px; background: var(--grey3); }
+  .wf-ov-label { font-size: 10px; color: var(--grey4); font-weight: 500; }
+  .wf-ov-input {
+    width: 52px; padding: 3px 5px; font-size: 10px; border: 1px solid var(--grey3);
+    border-radius: 3px; background: #fff; font-family: var(--mono);
+  }
+  .wf-ov-add {
+    padding: 3px 9px; border: none; border-radius: 3px;
+    background: var(--blue2); color: #fff; font-size: 10px; font-weight: 700;
+  }
+  .wf-ov-clear {
+    padding: 3px 7px; border: 1px solid var(--grey3); border-radius: 3px;
+    font-size: 10px; background: #fff; color: var(--grey5);
+  }
+
+  .wf-overlay-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+  .wf-ov-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    border: 1px solid; border-radius: 3px; padding: 1px 6px;
+    font-size: 10px; font-weight: 600; font-family: var(--mono);
+  }
+  .wf-ov-tag.t0 { border-color: #5b21b6; color: #5b21b6; background: #f5f0ff; }
+  .wf-ov-tag.t1 { border-color: #16a34a; color: #16a34a; background: #f0fdf4; }
+  .wf-ov-tag .rm { color: #aaa; cursor: pointer; font-size: 11px; }
+
+  .wf-event-badge {
+    display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px;
+    background: #fff3e0; border: 1px solid #ffb74d; border-radius: 10px;
+    font-size: 10px; font-weight: 600; color: var(--orange);
+  }
+  .wf-reg-badge {
+    display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px;
+    background: #e8f5e9; border: 1px solid #81c784; border-radius: 10px;
+    font-size: 10px; font-weight: 600; color: #1b5e20;
+  }
+
+  .wf-daily-chart { height: 180px; background: #fff; border: 1px solid var(--grey2); border-radius: 4px; position: relative; overflow: hidden; }
+  .wf-daily-chart-svg { width: 100%; height: 100%; }
+
+  .wf-edit-tbl { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .wf-edit-tbl th { background: #e8f0fe; padding: 4px 8px; text-align: left; font-size: 10px; font-weight: 700; color: var(--blue2); }
+  .wf-edit-tbl td { padding: 3px 8px; border-bottom: 1px solid var(--grey2); font-size: 10px; }
+  .wf-edit-tbl td.cur { color: var(--blue2); font-weight: 600; }
+  .wf-edit-input {
+    width: 60px; padding: 2px 4px; border: 1px solid var(--grey3); border-radius: 3px;
+    font-size: 10px; text-align: right; background: #fff;
+  }
+  .wf-sum-ok  { color: var(--green); font-weight: 700; font-size: 10px; }
+
+  .wf-dist-btn-row { display: flex; gap: 6px; margin-top: 8px; }
+  .wf-db { padding: 5px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; border: none; cursor: pointer; }
+  .wf-db.norm  { background: #e8f0fe; color: var(--blue2); }
+  .wf-db.save  { background: var(--green); color: #fff; }
+  .wf-db.reset { background: var(--grey2); color: var(--grey5); border: 1px solid var(--grey3); }
+
+  /* ── CALLOUTS ── */
+  .callout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+  .callout {
+    background: var(--grey1); border: 1px solid var(--grey3); border-radius: 6px;
+    padding: 14px 16px;
+  }
+  .callout.highlight { border-left: 3px solid var(--red); }
+  .callout h4 { font-size: 12px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .callout p, .callout li { font-size: 12px; color: var(--grey5); }
+
+  /* ── DATA FLOW ── */
+  .flow { display: flex; align-items: center; gap: 0; margin: 16px 0; flex-wrap: wrap; }
+  .flow-node {
+    background: var(--grey1); border: 1px solid var(--grey3); border-radius: 4px;
+    padding: 8px 12px; font-size: 11px; font-weight: 600; color: var(--ink);
+    text-align: center; min-width: 90px;
+  }
+  .flow-node.highlight { background: #fff8f8; border-color: var(--red); color: var(--red); }
+  .flow-node sub { display: block; font-size: 9px; color: var(--grey4); font-weight: 400; margin-top: 2px; }
+  .flow-arr { color: var(--grey3); font-size: 16px; padding: 0 4px; flex-shrink: 0; }
+
+  /* ── TABLE ── */
+  .doc-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 12px; }
+  .doc-table th { background: var(--blue); color: #fff; padding: 7px 10px; text-align: left; font-weight: 600; font-size: 11px; }
+  .doc-table td { padding: 6px 10px; border-bottom: 1px solid var(--grey2); color: var(--grey5); }
+  .doc-table tr:last-child td { border-bottom: none; }
+  .doc-table tr:hover td { background: var(--grey1); }
+  .doc-table td strong { color: var(--ink); }
+
+  /* ── SHORTCUT TABLE ── */
+  .sc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 12px 0; }
+  .sc-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; background: var(--grey1); border-radius: 4px; }
+  .sc-key { font-family: var(--mono); font-size: 10px; font-weight: 600; background: #fff; border: 1px solid var(--grey3); border-radius: 3px; padding: 2px 6px; color: var(--blue2); white-space: nowrap; flex-shrink: 0; }
+  .sc-desc { font-size: 11px; color: var(--grey5); }
+
+  /* ── ANNOTATIONS ── */
+  .annotation {
+    background: #fffbe6; border: 1px solid #ffe066; border-radius: 4px;
+    padding: 8px 12px; margin: 8px 0; font-size: 11px; color: #664d00;
+  }
+  .annotation strong { color: #3d2e00; }
+
+  /* ── FUTURE FEATURES ── */
+  .future-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 12px 0; }
+  .future-card {
+    border: 1px solid var(--grey3); border-radius: 6px; padding: 12px; background: #fff;
+  }
+  .future-card .tag {
+    font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    padding: 2px 6px; border-radius: 3px; display: inline-block; margin-bottom: 6px;
+  }
+  .future-card .tag.high   { background: #fde8e8; color: var(--red); }
+  .future-card .tag.med    { background: #fff3e0; color: var(--orange); }
+  .future-card .tag.future { background: #e8f0fe; color: var(--blue2); }
+  .future-card h4 { font-size: 12px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+  .future-card p  { font-size: 11px; color: var(--grey4); }
+
+  /* ── PRINT ── */
+  @media print {
+    .page { padding: 24px 28px; max-width: 100%; }
+    .wf-wrap { break-inside: avoid; }
+    .section { break-inside: avoid; }
+  }
+
+  hr.doc { border: none; border-top: 1px solid var(--grey2); margin: 24px 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-eyebrow">Purolator: Internal Tool</div>
+  <div class="cover-title">Volume Planner<br>Product Documentation</div>
+  <div class="cover-sub">Wireframes, data flows, feature reference, and roadmap</div>
+  <div class="cover-meta">
+    <div class="cover-meta-item"><span class="label">Version</span><span class="val">v15</span></div>
+    <div class="cover-meta-item"><span class="label">Date</span><span class="val">June 2026</span></div>
+    <div class="cover-meta-item"><span class="label">Built by</span><span class="val">Anay Baid</span></div>
+    <div class="cover-meta-item"><span class="label">Product owner</span><span class="val">Mehrdad Dadgar</span></div>
+    <div class="cover-meta-item"><span class="label">Stack</span><span class="val">Python / Flask / Chart.js / Prophet</span></div>
+  </div>
+</div>
+
+<!-- 01. PIPELINE -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">1.</span>
+    <span class="section-title">Where the app fits</span>
+  </div>
+
+  <p>The Volume Planner is one step in a five-step pipeline. Mehrdad's team runs the pipeline weekly. The app only handles the human review and adjustment step here, not the R model or the data pulls.</p>
+
+  <div class="pipeline">
+    <div class="pipe-step">
+      <div class="pipe-num">01</div>
+      <div class="pipe-name">Courier Ops</div>
+      <div class="pipe-desc">Daily volume pulled from QlikView each Monday</div>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-num">02</div>
+      <div class="pipe-name">FMR Daily DB</div>
+      <div class="pipe-desc">Pre-processed, cleaned, appended to history</div>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-num">03</div>
+      <div class="pipe-name">R Forecast Model</div>
+      <div class="pipe-desc">STL + ARIMA fits seasonal trend. Outputs forecast CSV</div>
+    </div>
+    <div class="pipe-step active">
+      <div class="pipe-num">04</div>
+      <div class="pipe-name">Volume Planner</div>
+      <div class="pipe-desc">Planners review, adjust, validate daily shapes, export</div>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-num">05</div>
+      <div class="pipe-name">Final Forecast</div>
+      <div class="pipe-desc">Finalized CSV feeds daily distribution model</div>
+    </div>
+  </div>
+
+  <div class="annotation">
+    <strong>What the app does not do:</strong> run the R model, pull from Courier Ops directly, store data in a central database, or handle multi-user authentication. These are all separate concerns.
+  </div>
+</div>
+
+<!-- 02. SCREEN 1: WEEKLY FORECAST -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">2.</span>
+    <span class="section-title">Screen 1: Weekly forecast review</span>
+  </div>
+
+  <p>The main working screen. Planners load actuals and forecast files, review the chart, select weeks to adjust, apply operations, and export the finalized CSV. This is the screen Mehrdad said: <em>"You did it. This state is almost done."</em></p>
+
+  <!-- WIREFRAME -->
+  <div class="wf-wrap">
+    <!-- nav -->
+    <div class="wf-nav">
+      <div class="wf-nav-logo">Forecast Tool</div>
+      <div class="wf-nav-links">
+        <div class="wf-nav-link active">Weekly Forecast</div>
+        <div class="wf-nav-link">Daily Distribution</div>
+      </div>
+    </div>
+
+    <div class="wf-body">
+      <!-- sidebar -->
+      <div class="wf-side">
+        <div>
+          <div class="wf-sec">Load Files</div>
+          <div class="wf-upload-btn actual ok">Actual.xlsx loaded</div>
+          <div class="wf-upload-btn forecast ok">Forecast.xlsx loaded</div>
+          <div class="wf-upload-btn daily">Daily Dist. (optional)</div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--grey3)">
+
+        <div>
+          <div class="wf-sec">Metric</div>
+          <select class="wf-dd-select" style="font-size:10px;padding:3px 5px">
+            <option>Total Del Pieces</option>
+          </select>
+        </div>
+
+        <div>
+          <div class="wf-sec">Base Year (YoY) &nbsp; Forecast Year</div>
+          <div style="display:flex;gap:4px">
+            <select class="wf-dd-select" style="flex:1;font-size:10px;padding:3px 4px"><option>2021</option></select>
+            <select class="wf-dd-select" style="flex:1;font-size:10px;padding:3px 4px"><option>2026</option></select>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--grey3)">
+
+        <div>
+          <div class="wf-sec">Forecast Source</div>
+          <div class="wf-toggle">
+            <div class="wf-toggle-btn on">Original</div>
+            <div class="wf-toggle-btn prophet">Prophet</div>
+          </div>
+          <div style="font-size:9px;color:var(--grey4);margin-top:3px">Prophet 2027 overlay is on by default</div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--grey3)">
+
+        <div>
+          <div class="wf-sec">Division <span style="color:var(--blue2);font-weight:700">(ALL)</span></div>
+          <div class="wf-pill-wrap">
+            <div class="wf-pill on">ATLANTIC</div>
+            <div class="wf-pill on">GTA</div>
+            <div class="wf-pill">NEO</div>
+            <div class="wf-pill on">PACIFIC</div>
+            <div class="wf-pill">PRAIRIES</div>
+            <div class="wf-pill on">QUEBEC</div>
+            <div class="wf-pill">SWO</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="wf-sec">Actual Years</div>
+          <div class="wf-pill-wrap">
+            <div class="wf-pill">2020</div>
+            <div class="wf-pill on">2021</div>
+            <div class="wf-pill">2022</div>
+            <div class="wf-pill">2023</div>
+            <div class="wf-pill">2024</div>
+            <div class="wf-pill">2025</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="wf-sec">Terminal</div>
+          <input type="text" placeholder="Search..." style="width:100%;padding:3px 5px;font-size:10px;border:1px solid var(--grey3);border-radius:4px;margin-bottom:3px;background:#fff">
+          <div class="wf-tlist">
+            <div class="wf-titem"><div class="wf-chk"></div><div class="tid">12</div>Toronto West</div>
+            <div class="wf-titem" style="background:#ddeeff"><div class="wf-chk" style="background:var(--blue2);border-color:var(--blue2)"></div><div class="tid" style="color:var(--blue2)">40</div>North Bay</div>
+            <div class="wf-titem"><div class="wf-chk"></div><div class="tid">41</div>Sault Ste Marie</div>
+            <div class="wf-titem"><div class="wf-chk"></div><div class="tid">42</div>Timmins</div>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--grey3)">
+
+        <div class="wf-btn-row">
+          <div class="wf-btn go" style="font-size:11px">Refresh Chart</div>
+          <div class="wf-btn ex">Export CSV</div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--grey3)">
+
+        <div>
+          <div class="wf-sec">Change Log</div>
+          <div style="border:1px solid var(--grey3);border-radius:4px;background:#fff;overflow:hidden">
+            <div class="wf-cl-item"><div class="wf-cl-wk">W36</div><div class="wf-cl-desc">% Increase 5%</div><div class="wf-cl-val">3,421K</div></div>
+            <div class="wf-cl-item"><div class="wf-cl-wk">W41</div><div class="wf-cl-desc">Set to 3200K</div><div class="wf-cl-val">3,200K</div></div>
+            <div class="wf-cl-item"><div class="wf-cl-wk">W47</div><div class="wf-cl-desc">% Increase 12%</div><div class="wf-cl-val">4,550K</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- main -->
+      <div class="wf-main">
+        <!-- chart bar -->
+        <div class="wf-bar">
+          <div>
+            <div class="wf-bar-title">Total Del Pieces</div>
+            <div class="wf-bar-sub">All divisions · All terminals</div>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+            <span style="font-size:10px;border:1px solid var(--grey3);padding:2px 7px;border-radius:3px;cursor:pointer">Download Chart</span>
+            <span class="wf-lp lp-a">Actual (prior)</span>
+            <span class="wf-lp lp-cur">Actual 2026</span>
+            <span class="wf-lp lp-f">Forecast 2026</span>
+            <span class="wf-lp lp-m">Modified</span>
+            <span class="wf-lp lp-p27">Prophet 2027</span>
+          </div>
+        </div>
+
+        <!-- chart area -->
+        <div class="wf-chart-area">
+          <svg class="wf-chart-svg" viewBox="0 0 680 160" preserveAspectRatio="none">
+            <!-- y-axis labels -->
+            <text x="2" y="14" font-size="8" fill="#aaa">4.8M</text>
+            <text x="2" y="44" font-size="8" fill="#aaa">4.4M</text>
+            <text x="2" y="74" font-size="8" fill="#aaa">4.0M</text>
+            <text x="2" y="104" font-size="8" fill="#aaa">3.6M</text>
+            <text x="2" y="134" font-size="8" fill="#aaa">3.2M</text>
+            <!-- period lines -->
+            <line x1="90" y1="10" x2="90" y2="148" stroke="#e0e0e0" stroke-dasharray="3,3" stroke-width="1"/>
+            <line x1="175" y1="10" x2="175" y2="148" stroke="#e0e0e0" stroke-dasharray="3,3" stroke-width="1"/>
+            <line x1="260" y1="10" x2="260" y2="148" stroke="#e0e0e0" stroke-dasharray="3,3" stroke-width="1"/>
+            <line x1="345" y1="10" x2="345" y2="148" stroke="#e0e0e0" stroke-dasharray="3,3" stroke-width="1"/>
+            <line x1="430" y1="10" x2="430" y2="148" stroke="#e0e0e0" stroke-dasharray="3,3" stroke-width="1"/>
+            <line x1="515" y1="10" x2="515" y2="148" stroke="#e0e0e0" stroke-dasharray="3,3" stroke-width="1"/>
+            <!-- Prior year (grey solid) -->
+            <polyline points="22,110 60,108 90,95 120,98 150,100 175,97 205,102 230,105 260,100 290,95 310,85 330,80 345,78 370,82 395,88 420,90 430,85 450,72 460,40 470,50 480,62 500,80 515,90 540,100 580,108 620,112 660,110" fill="none" stroke="#ccc" stroke-width="1.5"/>
+            <!-- 2026 actuals (red, up to W22) -->
+            <polyline points="22,108 60,105 90,92 120,96 150,98 175,95 205,100 230,103 260,98 290,92" fill="none" stroke="#c8102e" stroke-width="2"/>
+            <!-- Forecast (blue dashed) -->
+            <polyline points="290,92 310,82 330,78 345,76 370,80 395,86 420,88 430,82 450,68 460,36 470,48 480,60 500,78 515,88 540,98 580,106 620,110 660,108" fill="none" stroke="#0070c0" stroke-width="1.5" stroke-dasharray="5,3"/>
+            <!-- Modified (orange dots on W36,W41,W47) -->
+            <circle cx="370" cy="78" r="3.5" fill="#e65100"/>
+            <circle cx="430" cy="80" r="3.5" fill="#e65100"/>
+            <circle cx="460" cy="34" r="3.5" fill="#e65100"/>
+            <!-- Prophet 2027 (dark green dashed, same x positions) -->
+            <polyline points="22,115 60,112 90,100 120,103 150,105 175,102 205,108 230,111 260,106 290,100 310,90 330,86 345,84 370,88 395,94 420,96 430,90 450,76 460,44 470,55 480,67 500,85 515,95 540,105 580,113 620,116 660,115" fill="none" stroke="#145214" stroke-width="1.5" stroke-dasharray="8,4"/>
+            <!-- x-axis labels -->
+            <text x="22" y="158" font-size="7" fill="#aaa" text-anchor="middle">1</text>
+            <text x="90" y="158" font-size="7" fill="#aaa" text-anchor="middle">9</text>
+            <text x="175" y="158" font-size="7" fill="#aaa" text-anchor="middle">18</text>
+            <text x="260" y="158" font-size="7" fill="#aaa" text-anchor="middle">27</text>
+            <text x="345" y="158" font-size="7" fill="#aaa" text-anchor="middle">36</text>
+            <text x="430" y="158" font-size="7" fill="#aaa" text-anchor="middle">41</text>
+            <text x="515" y="158" font-size="7" fill="#aaa" text-anchor="middle">47</text>
+            <text x="660" y="158" font-size="7" fill="#aaa" text-anchor="middle">52</text>
+          </svg>
+        </div>
+
+        <!-- KPI bar -->
+        <div class="wf-kpi-bar">
+          <div class="wf-kpi">
+            <div class="wf-kpi-val red">-2.0%</div>
+            <div class="wf-kpi-lbl">Avg YoY Forecast %</div>
+          </div>
+          <div class="wf-kpi">
+            <div class="wf-kpi-val red">-8.8%</div>
+            <div class="wf-kpi-lbl">Avg YoY Actual (W1-W22)</div>
+          </div>
+          <div class="wf-kpi">
+            <div class="wf-kpi-val blue">174.1M</div>
+            <div class="wf-kpi-lbl">Total Forecast Volume</div>
+          </div>
+          <div class="wf-kpi">
+            <div class="wf-kpi-val red">-4.7%</div>
+            <div class="wf-kpi-lbl">YoY Total vs 2021</div>
+          </div>
+        </div>
+
+        <!-- Selection KPI bar (shown when weeks selected) -->
+        <div class="wf-kpi-sel-bar">
+          <span class="wf-kpi-sel-label">Selection</span>
+          <div class="wf-kpi-sel">
+            <div class="v">W36, W41, W47, W51</div>
+            <div class="l">Selected weeks</div>
+          </div>
+          <div class="wf-kpi-sel">
+            <div class="v" style="color:var(--green)">+3.2%</div>
+            <div class="l">Avg YoY Forecast</div>
+          </div>
+          <div class="wf-kpi-sel">
+            <div class="v" style="color:#c00">-1.1%</div>
+            <div class="l">Avg YoY Actual</div>
+          </div>
+          <div class="wf-kpi-sel">
+            <div class="v" style="color:var(--blue2)">16.8M</div>
+            <div class="l">Total Forecast</div>
+          </div>
+          <div style="margin-left:auto;font-size:9px;color:var(--grey4)">Ctrl+Shift+Y &nbsp; | &nbsp; Clear selection</div>
+        </div>
+
+        <!-- Excel bar -->
+        <div class="wf-excel-bar">
+          <div class="wf-cell-ref">W36 · Forecast</div>
+          <div class="wf-xsep"></div>
+          <div class="wf-xbtn">Select All</div>
+          <div class="wf-xbtn">Select Forecast</div>
+          <div class="wf-xbtn">Clear Selection</div>
+          <div class="wf-xsep"></div>
+          <div class="wf-xbtn danger">Revert Selected</div>
+          <div class="wf-xbtn danger">Revert All</div>
+          <div class="wf-op-group">
+            <span class="wf-op-label">Operation</span>
+            <select class="wf-op-sel">
+              <option>% Increase</option>
+              <option>% Decrease</option>
+              <option>Set to</option>
+              <option>Add</option>
+            </select>
+            <input class="wf-op-num" type="number" value="5">
+            <div class="wf-apply">Apply</div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="wf-table-wrap" style="height:180px">
+          <table class="wf-tbl">
+            <thead>
+              <tr>
+                <th>Wk</th><th>Base</th><th>Actual 2026</th>
+                <th>Forecast</th><th>YoY Act %</th><th>YoY Fc %</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td style="color:var(--grey4)">3,208K</td><td>3,421K</td><td class="fc">3,510K</td><td class="red">-2.1%</td><td class="red">-1.4%</td><td><span class="pill base">Base</span></td></tr>
+              <tr><td>2</td><td style="color:var(--grey4)">3,190K</td><td>3,380K</td><td class="fc">3,490K</td><td class="grn">+0.3%</td><td class="red">-1.8%</td><td><span class="pill base">Base</span></td></tr>
+              <tr class="sel"><td>36</td><td style="color:var(--grey4)">3,300K</td><td>N/A</td><td class="fc">3,465K</td><td>N/A</td><td class="grn">+5.0%</td><td><span class="pill base">Base</span></td></tr>
+              <tr class="sel"><td>41</td><td style="color:var(--grey4)">3,150K</td><td>N/A</td><td class="fm">3,200K</td><td>N/A</td><td class="grn">+1.6%</td><td><span class="pill mod">Mod</span></td></tr>
+              <tr class="sel"><td>47</td><td style="color:var(--grey4)">4,200K</td><td>N/A</td><td class="fm">4,550K</td><td>N/A</td><td class="grn">+8.3%</td><td><span class="pill mod">Mod</span></td></tr>
+              <tr class="sel"><td>51</td><td style="color:var(--grey4)">4,500K</td><td>N/A</td><td class="fc">4,620K</td><td>N/A</td><td class="grn">+2.7%</td><td><span class="pill base">Base</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="doc">
+
+  <h3>How the table selection works</h3>
+  <p>Click any cell to select it. The blue highlight and cell reference in the toolbar update immediately. Shift+click extends selection. Ctrl+click adds individual cells. When you have weeks selected, the blue selection KPI bar appears above the table showing YoY stats for only those weeks. Ctrl+Shift+Y refreshes it.</p>
+
+  <h3>How operations work</h3>
+  <p>Choose an operation (% Increase, Set to, Add), type a number, press Enter or click Apply. If you set a week to 500K and then add 500K, the result is 1,000K, not the original plus 500K. The original forecast line stays on the chart as a grey dashed line whenever you have unsaved modifications. Revert Selected steps back one operation at a time. Revert All resets everything.</p>
+
+  <h3>Prophet 2027 overlay</h3>
+  <p>The Prophet 2027 line uses the same x-axis positions as the 2026 forecast, so week 27 of 2027 sits directly above week 27 of 2026. This means you can visually compare the two years' peak timing and amplitude without any axis shifting.</p>
+</div>
+
+<!-- 03. SCREEN 2: DAILY DISTRIBUTION -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">3.</span>
+    <span class="section-title">Screen 2: Daily distribution</span>
+  </div>
+
+  <p>Separate page for managing how a week's volume is distributed across days (Sun through Sat). Planners use this to validate that event weeks (holidays, peak) have the right daily shape before applying them to the forecast.</p>
+
+  <div class="wf-wrap">
+    <!-- nav -->
+    <div class="wf-nav">
+      <div class="wf-nav-logo">Forecast Tool</div>
+      <div class="wf-nav-links">
+        <div class="wf-nav-link">Weekly Forecast</div>
+        <div class="wf-nav-link active">Daily Distribution</div>
+      </div>
+    </div>
+
+    <div class="wf-dd-body">
+      <!-- sidebar -->
+      <div class="wf-dd-side">
+        <div>
+          <div class="wf-sec">Upload Files</div>
+          <div style="font-size:10px;color:var(--green);background:#f0f9f0;border:1px solid #9dc39d;border-radius:4px;padding:4px 7px;margin-bottom:3px">Daily Dist loaded (2912 rows)</div>
+          <div style="font-size:10px;color:var(--orange);background:#fff3e0;border:1px solid #ffb74d;border-radius:4px;padding:4px 7px">Event Map loaded</div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--grey3)">
+
+        <div>
+          <div class="wf-sec">Division</div>
+          <select class="wf-dd-select"><option>GREATER TORONTO AREA</option></select>
+        </div>
+        <div>
+          <div class="wf-sec">Terminal</div>
+          <select class="wf-dd-select"><option>101: Terminal Alpha</option></select>
+        </div>
+        <div>
+          <div class="wf-sec">Week (1-52)</div>
+          <input type="number" value="27" style="width:100%;padding:4px 6px;font-size:10px;border:1px solid var(--grey3);border-radius:4px;background:#fff">
+        </div>
+        <div>
+          <div class="wf-sec">Metric</div>
+          <select class="wf-dd-select"><option>PCL Del Pieces</option></select>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--grey3)">
+
+        <div>
+          <div class="wf-sec">Distribution Changes</div>
+          <div style="border:1px solid var(--grey3);border-radius:4px;background:#fff;overflow:hidden">
+            <div style="padding:4px 7px;border-bottom:1px solid var(--grey2)">
+              <div style="font-size:9px;font-weight:700;color:var(--blue2);font-family:var(--mono)">T101 W27 Monday</div>
+              <div style="font-size:9px;color:var(--grey5)">PCL Del: <span style="color:#c00">3.20%</span> → <span style="color:var(--green)">4.10%</span></div>
+              <div style="font-size:9px;color:var(--grey4)">2026-06-20 11:04</div>
+            </div>
+          </div>
+          <div style="margin-top:5px;padding:4px 8px;border:1px solid var(--grey3);border-radius:4px;background:#fff;font-size:10px;font-weight:600;color:var(--grey5);text-align:center;cursor:pointer">Refresh Log</div>
+        </div>
+      </div>
+
+      <!-- main content -->
+      <div class="wf-dd-main">
+
+        <!-- header -->
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div style="font-size:14px;font-weight:700;color:var(--ink)">Daily Distribution: Week 27</div>
+          <div class="wf-event-badge">Canada Day</div>
+        </div>
+
+        <!-- chart card -->
+        <div class="wf-dd-card">
+          <div class="wf-chart-controls">
+            <div class="wf-chart-title">% Allocation, Sun to Sat</div>
+            <div class="wf-view-btn on">%</div>
+            <div class="wf-view-btn">Volume</div>
+            <div class="wf-sep-v"></div>
+            <div class="wf-ov-label">Overlay:</div>
+            <input class="wf-ov-input" type="number" placeholder="Year" value="2015">
+            <input class="wf-ov-input" type="number" placeholder="Wk" value="27" style="width:42px">
+            <div class="wf-ov-add">Add</div>
+            <div class="wf-ov-clear">Clear</div>
+          </div>
+
+          <!-- active overlay tags -->
+          <div class="wf-overlay-tags">
+            <div class="wf-ov-tag t0">2015 W27 <span class="rm">x</span></div>
+            <div class="wf-ov-tag t1">2020 W28 <span class="rm">x</span></div>
+          </div>
+
+          <!-- chart -->
+          <div class="wf-daily-chart">
+            <svg class="wf-daily-chart-svg" viewBox="0 0 560 160" preserveAspectRatio="none">
+              <!-- grid -->
+              <line x1="50" y1="10" x2="50" y2="145" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="130" y1="10" x2="130" y2="145" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="210" y1="10" x2="210" y2="145" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="290" y1="10" x2="290" y2="145" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="370" y1="10" x2="370" y2="145" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="450" y1="10" x2="450" y2="145" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="530" y1="10" x2="530" y2="145" stroke="#f0f0f0" stroke-width="1"/>
+              <!-- y labels -->
+              <text x="2" y="14" font-size="8" fill="#aaa">25%</text>
+              <text x="2" y="54" font-size="8" fill="#aaa">15%</text>
+              <text x="2" y="94" font-size="8" fill="#aaa">5%</text>
+              <!-- Current week line (blue solid). W27 is Canada Day, Mon is a holiday so it's low -->
+              <polyline points="50,138 130,130 210,40 290,38 370,42 450,75 530,135"
+                fill="rgba(0,112,192,0.08)" stroke="#0070c0" stroke-width="2" fill-opacity="1"/>
+              <circle cx="50" cy="138" r="4" fill="#0070c0"/>
+              <circle cx="130" cy="130" r="4" fill="#0070c0"/>
+              <circle cx="210" cy="40" r="4" fill="#0070c0"/>
+              <circle cx="290" cy="38" r="4" fill="#0070c0"/>
+              <circle cx="370" cy="42" r="4" fill="#0070c0"/>
+              <circle cx="450" cy="75" r="4" fill="#0070c0"/>
+              <circle cx="530" cy="135" r="4" fill="#0070c0"/>
+              <!-- 2015 W27 (purple dashed) -->
+              <polyline points="50,140 130,132 210,38 290,36 370,40 450,72 530,138"
+                fill="none" stroke="#5b21b6" stroke-width="1.5" stroke-dasharray="5,3"/>
+              <!-- 2020 W28 (green dashed) -->
+              <polyline points="50,136 130,128 210,44 290,42 370,46 450,80 530,132"
+                fill="none" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="5,3"/>
+              <!-- Aggregated average (orange bold) -->
+              <polyline points="50,138 130,130 210,40 290,38 370,42 450,75 530,135"
+                fill="none" stroke="#e65100" stroke-width="2.5"/>
+              <!-- x labels -->
+              <text x="50"  y="158" font-size="8" fill="#888" text-anchor="middle">Sun</text>
+              <text x="130" y="158" font-size="8" fill="#888" text-anchor="middle">Mon</text>
+              <text x="210" y="158" font-size="8" fill="#888" text-anchor="middle">Tue</text>
+              <text x="290" y="158" font-size="8" fill="#888" text-anchor="middle">Wed</text>
+              <text x="370" y="158" font-size="8" fill="#888" text-anchor="middle">Thu</text>
+              <text x="450" y="158" font-size="8" fill="#888" text-anchor="middle">Fri</text>
+              <text x="530" y="158" font-size="8" fill="#888" text-anchor="middle">Sat</text>
+              <!-- Legend -->
+              <line x1="140" y1="12" x2="160" y2="12" stroke="#0070c0" stroke-width="2"/>
+              <text x="164" y="16" font-size="8" fill="#0070c0">W27 current</text>
+              <line x1="230" y1="12" x2="250" y2="12" stroke="#5b21b6" stroke-width="1.5" stroke-dasharray="4,2"/>
+              <text x="254" y="16" font-size="8" fill="#5b21b6">2015 W27</text>
+              <line x1="310" y1="12" x2="330" y2="12" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,2"/>
+              <text x="334" y="16" font-size="8" fill="#16a34a">2020 W28</text>
+              <line x1="400" y1="12" x2="420" y2="12" stroke="#e65100" stroke-width="2.5"/>
+              <text x="424" y="16" font-size="8" fill="#e65100">Aggregated avg</text>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Edit table -->
+        <div class="wf-dd-card">
+          <h4>Edit Distribution</h4>
+          <p style="font-size:11px;color:var(--grey4);margin-bottom:8px">Edit % values below. Sum must be 100%. Changes apply to selected terminal / week.</p>
+          <table class="wf-edit-tbl">
+            <thead><tr><th>Day</th><th>Current %</th><th>New %</th></tr></thead>
+            <tbody>
+              <tr><td>Sunday</td><td class="cur">0.81%</td><td><input class="wf-edit-input" value="0.81"></td></tr>
+              <tr><td>Monday</td><td class="cur" style="color:var(--orange)">3.20%</td><td><input class="wf-edit-input" value="4.10" style="border-color:var(--blue2)"></td></tr>
+              <tr><td>Tuesday</td><td class="cur">22.40%</td><td><input class="wf-edit-input" value="22.40"></td></tr>
+              <tr><td>Wednesday</td><td class="cur">21.08%</td><td><input class="wf-edit-input" value="21.08"></td></tr>
+              <tr><td>Thursday</td><td class="cur">19.66%</td><td><input class="wf-edit-input" value="19.66"></td></tr>
+              <tr><td>Friday</td><td class="cur">18.64%</td><td><input class="wf-edit-input" value="17.74"></td></tr>
+              <tr><td>Saturday</td><td class="cur">14.21%</td><td><input class="wf-edit-input" value="14.21"></td></tr>
+              <tr>
+                <td style="font-weight:700">Total</td>
+                <td style="font-weight:700;color:var(--green)">100.00%</td>
+                <td class="wf-sum-ok">100.00%</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="wf-dist-btn-row">
+            <div class="wf-db norm">Normalize to 100%</div>
+            <div class="wf-db save">Save &amp; Download CSV</div>
+            <div class="wf-db reset">Reset</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <hr class="doc">
+
+  <h3>The overlay system: how it works</h3>
+  <p>Type a year and week in the Overlay inputs, click Add. That week's distribution fetches from the uploaded file and draws as a dashed line on the same chart. You can add multiple overlays, and each one gets a different color with a labeled tag you can remove. The <strong>orange bold line</strong> is the normalized aggregated average across all overlays. This is how Mehrdad derives event distributions: pull 2-3 historical weeks with the same holiday weekday pattern, see them overlaid, validate the orange average looks right, save it.</p>
+
+  <h3>Auto-loading for event weeks</h3>
+  <p>When you navigate to a known event week (Canada Day W27, Labour Day W36, Thanksgiving W41, Remembrance Day W45, Peak W47-49, Christmas W51-52), the app looks up the saved terminal preferences or global event map and loads the base weeks as overlays automatically. You don't need to type anything, the comparison just appears immediately.</p>
+
+  <h3>The edit table</h3>
+  <p>Change any day's percentage directly. The Total row turns green when values sum to exactly 100%, red otherwise. Normalize to 100% proportionally adjusts all days. Save &amp; Download CSV writes the change to memory, records it in the distribution change log (with before/after values and timestamp), and downloads the updated CSV. That CSV is re-uploaded next session.</p>
+</div>
+
+<!-- 04. DATA FLOW -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">4.</span>
+    <span class="section-title">Data flow: files in, files out</span>
+  </div>
+
+  <h3>Weekly forecast page</h3>
+  <div class="flow">
+    <div class="flow-node">Actual.xlsx<sub>from Courier Ops pull</sub></div>
+    <div class="flow-arr">+</div>
+    <div class="flow-node">Forecast.xlsx<sub>from R model output</sub></div>
+    <div class="flow-arr">→</div>
+    <div class="flow-node highlight">Volume Planner<sub>review &amp; adjust</sub></div>
+    <div class="flow-arr">→</div>
+    <div class="flow-node">Finalized CSV<sub>feeds next pipeline run</sub></div>
+  </div>
+
+  <h3>Daily distribution page</h3>
+  <div class="flow">
+    <div class="flow-node">daily_dist.csv<sub>from previous session export<br>or Mehrdad's base file</sub></div>
+    <div class="flow-arr">+</div>
+    <div class="flow-node">event_map.csv<sub>set once per year<br>in January</sub></div>
+    <div class="flow-arr">→</div>
+    <div class="flow-node highlight">Volume Planner<sub>validate, overlay, edit</sub></div>
+    <div class="flow-arr">→</div>
+    <div class="flow-node">daily_dist_updated.csv<sub>this file becomes the<br>input next session</sub></div>
+  </div>
+
+  <div class="annotation">
+    <strong>The output-becomes-input pattern:</strong> every CSV the app exports is what gets re-uploaded at the start of the next session. The distribution file carries its own change history as comment rows at the bottom. There is no database. State lives in files.
+  </div>
+
+  <h3>File formats</h3>
+  <table class="doc-table">
+    <thead><tr><th>File</th><th>Format</th><th>Key columns</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Actual volumes</strong></td><td>Excel (.xlsx)</td><td>Week.Number, Year, metric columns (Total.Del.Pcs.N etc.)</td></tr>
+      <tr><td><strong>Forecast</strong></td><td>Excel (.xlsx)</td><td>Same structure as actuals. App strips _EDITED suffix automatically.</td></tr>
+      <tr><td><strong>Daily distribution</strong></td><td>CSV or Excel</td><td>Division, Terminal, Year, Week, Weekday (1=Sun..7=Sat), 8 metric % columns. Sum per terminal/week/metric = 100%.</td></tr>
+      <tr><td><strong>Event map</strong></td><td>CSV or Excel</td><td>Event.Name, Year, Week, Base.Year.1, Base.Week.1, Base.Year.2, Base.Week.2, Base.Year.3, Base.Week.3</td></tr>
+      <tr><td><strong>Event preferences</strong></td><td>CSV (exported)</td><td>Terminal, Event.Week, Event.Name, Base.Year/Week 1-3. Re-imported to restore per-terminal assignments.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 05. SHORTCUTS -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">5.</span>
+    <span class="section-title">Keyboard shortcuts</span>
+  </div>
+  <div class="sc-grid">
+    <div class="sc-item"><div class="sc-key">Ctrl + Enter</div><div class="sc-desc">Apply current operation to selected cells</div></div>
+    <div class="sc-item"><div class="sc-key">Ctrl + A</div><div class="sc-desc">Select all forecast value cells</div></div>
+    <div class="sc-item"><div class="sc-key">Ctrl + Shift + Y</div><div class="sc-desc">Refresh selection KPI bar for current selection</div></div>
+    <div class="sc-item"><div class="sc-key">Shift + Click</div><div class="sc-desc">Extend selection to clicked cell</div></div>
+    <div class="sc-item"><div class="sc-key">Escape</div><div class="sc-desc">Clear all selected cells</div></div>
+    <div class="sc-item"><div class="sc-key">Delete</div><div class="sc-desc">Revert selected cells one step</div></div>
+  </div>
+</div>
+
+<!-- 06. WHAT WORKS WHAT IS NEXT -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">6.</span>
+    <span class="section-title">What works today vs what is next</span>
+  </div>
+
+  <div class="callout-grid">
+    <div class="callout highlight">
+      <h4>Built and working</h4>
+      <ul>
+        <li>Weekly forecast review chart with all line types</li>
+        <li>Prophet 2027 overlay on same x-axis as 2026</li>
+        <li>Sequential operations (set 500, add 500 = 1000)</li>
+        <li>Stack-based revert, one step at a time</li>
+        <li>Change log sidebar with timestamps</li>
+        <li>Selection-range KPI bar (Ctrl+Shift+Y)</li>
+        <li>Multi-week daily comparison: expand 2+ weeks simultaneously, see all daily breakdowns side by side with combined overlay chart</li>
+        <li>Daily page: Sun-Sat line chart with % / Volume toggle</li>
+        <li>Overlay system: multiple base weeks, same canvas, orange aggregate</li>
+        <li>Auto-load base weeks for event weeks</li>
+        <li>Edit table with normalize to 100%</li>
+        <li>Distribution change log (before/after, timestamp)</li>
+        <li>Event preferences save / export / import CSV</li>
+        <li>Export finalized weekly forecast CSV</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>Not yet built</h4>
+      <ul>
+        <li>Cell-level selection (it's still row-level right now, Mehrdad explicitly said "for a cell")</li>
+        <li>Chart PNG export with metadata (metric, terminal, date) in the image</li>
+        <li>Load previous vs start fresh modal at daily page startup</li>
+        <li>Regular week pattern per terminal (terminal 12 uses weeks X)</li>
+        <li>Division-level event override ("for Atlantic, use these weeks")</li>
+        <li>Historical parquet upload (annual file, 135 terminals x 13 years)</li>
+        <li>AWS/S3 deployment (state lost on server restart)</li>
+        <li>User login and per-terminal access control</li>
+        <li>SharePoint integration for final export</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 07. FUTURE FEATURES -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">7.</span>
+    <span class="section-title">Future features and AI integration</span>
+  </div>
+
+  <p>Features roughly ordered by value to Mehrdad's team. The first three are already in the codebase, just not fully exposed in UI.</p>
+
+  <div class="future-grid">
+    <div class="future-card">
+      <div class="tag high">High priority</div>
+      <h4>AWS deployment + S3</h4>
+      <p>Remove the need to re-upload files each session. Distribution file loads automatically on startup. ~$20/month on EC2 t3.small.</p>
+    </div>
+    <div class="future-card">
+      <div class="tag high">High priority</div>
+      <h4>Cell-level selection</h4>
+      <p>Mehrdad said: "it should be for a cell, not the full row." Shift+click to extend, Ctrl+click to add individual cells across any column.</p>
+    </div>
+    <div class="future-card">
+      <div class="tag high">High priority</div>
+      <h4>Chart week highlight</h4>
+      <p>When weeks are selected in the table, shade those columns on the chart. Makes the table-chart link obvious for field engineers.</p>
+    </div>
+    <div class="future-card">
+      <div class="tag med">Medium</div>
+      <h4>Version history</h4>
+      <p>Timestamp-versioned CSV exports. "Load previous" modal at daily page startup. Each file carries its full edit history already, it just needs a UI for browsing versions.</p>
+    </div>
+    <div class="future-card">
+      <div class="tag med">Medium</div>
+      <h4>Terminal access control</h4>
+      <p>Field engineers log in and see only their terminals. Edits visible to everyone but scoped to their division. Requires Purolator SSO integration.</p>
+    </div>
+    <div class="future-card">
+      <div class="tag med">Medium</div>
+      <h4>Ensemble forecast</h4>
+      <p>Weighted average of Prophet + the R model output. Slider in sidebar to adjust weights. Usually more accurate than either model alone.</p>
+    </div>
+    <div class="future-card">
+      <div class="tag future">Future</div>
+      <h4>Gemini anomaly explanation</h4>
+      <p>When a week's YoY is an outlier, call Gemini API with context. Returns a plain-English explanation, like "W27 is Canada Day, Monday volume typically drops 80%."</p>
+    </div>
+    <div class="future-card">
+      <div class="tag future">Future</div>
+      <h4>Gemini event similarity</h4>
+      <p>Given a new holiday weekday pattern, Gemini identifies the best 2-3 historical base weeks to use for the daily distribution, replacing the manual lookup process.</p>
+    </div>
+    <div class="future-card">
+      <div class="tag future">Future</div>
+      <h4>TradingView-style chart</h4>
+      <p>Zoom, pan, crosshair hover showing all lines at a week. Right now the chart is static height. A zoomable canvas would help during peak week analysis.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 08. MAINTENANCE -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">8.</span>
+    <span class="section-title">Maintenance and handover</span>
+  </div>
+
+  <h3>Annual tasks (January)</h3>
+  <ul>
+    <li>Update the historical daily distribution parquet file by adding the completed prior year</li>
+    <li>Update <code>mock_event_map.csv</code> with the new year's holiday weeks and which weekday each falls on</li>
+    <li>Identify 2-3 historical base weeks for each event (same holiday weekday pattern)</li>
+    <li>Verify Prophet model config in <code>prophet_pipeline/config.py</code> is still appropriate</li>
+  </ul>
+
+  <h3>Weekly tasks (Monday)</h3>
+  <ul>
+    <li>Mehrdad runs the Courier Ops pull and R model externally</li>
+    <li>Upload Actual.xlsx and Forecast.xlsx to the app</li>
+    <li>Review chart, make adjustments, validate daily distributions for event weeks</li>
+    <li>Export finalized CSV and submit to planning</li>
+  </ul>
+
+  <h3>Key files for a new developer</h3>
+  <table class="doc-table">
+    <thead><tr><th>File</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><code>app.py</code></td><td>All Flask routes and backend logic. Every API endpoint is here. Start here.</td></tr>
+      <tr><td><code>static/app.js</code></td><td>All frontend logic for the weekly forecast page: chart, table, KPIs, operations, export.</td></tr>
+      <tr><td><code>static/daily.html</code></td><td>The daily distribution page, HTML and JavaScript in one self-contained file.</td></tr>
+      <tr><td><code>static/style.css</code></td><td>All visual styling. Color variables at the top of the file.</td></tr>
+      <tr><td><code>prophet_pipeline/</code></td><td>The Prophet forecasting model. <code>pipeline.py</code> is the entry point.</td></tr>
+      <tr><td><code>tests/</code></td><td>Smoke tests and unit tests. Run <code>./run_tests.sh</code> before deploying any change.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</div><!-- end page -->
+</body>
+</html>
