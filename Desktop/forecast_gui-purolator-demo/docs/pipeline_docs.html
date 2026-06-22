@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Purolator Volume Planner — Pipeline & Model Documentation</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#C8102E; --blue:#003865; --blue2:#0070c0;
+  --green:#107c10; --orange:#e65100; --purple:#5b21b6;
+  --grey1:#fafafa; --grey2:#f0f0f0; --grey3:#e0e0e0;
+  --grey4:#aaa; --grey5:#666; --ink:#1a1a1a;
+  --mono:'JetBrains Mono',monospace; --sans:'Inter',-apple-system,sans-serif;
+}
+body{font-family:var(--sans);font-size:13px;color:var(--ink);background:#fff;line-height:1.6}
+.page{max-width:980px;margin:0 auto;padding:48px 40px}
+
+/* cover */
+.cover{padding:56px 0 40px;border-bottom:3px solid var(--red);margin-bottom:56px}
+.cover-eye{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:12px}
+.cover-title{font-size:34px;font-weight:600;color:var(--blue);line-height:1.15;margin-bottom:8px}
+.cover-sub{font-size:15px;color:var(--grey5);margin-bottom:24px}
+.cover-meta{display:flex;gap:28px;flex-wrap:wrap}
+.cm .l{font-size:9px;color:var(--grey4);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:2px}
+.cm .v{font-weight:600;font-size:13px}
+
+/* sections */
+.sec{margin-bottom:60px}
+.sec-hdr{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--grey3);padding-bottom:8px;margin-bottom:22px}
+.sec-num{font-family:var(--mono);font-size:11px;color:var(--red)}
+.sec-title{font-size:18px;font-weight:600;color:var(--blue)}
+h3{font-size:13px;font-weight:600;color:var(--ink);margin:18px 0 7px}
+h4{font-size:12px;font-weight:600;color:var(--grey5);margin:14px 0 5px;text-transform:uppercase;letter-spacing:.05em}
+p{font-size:13px;color:var(--grey5);line-height:1.7;margin-bottom:10px}
+ul,ol{padding-left:18px;margin-bottom:10px}
+li{font-size:13px;color:var(--grey5);line-height:1.7;margin-bottom:3px}
+strong{color:var(--ink);font-weight:600}
+code{font-family:var(--mono);font-size:11px;background:var(--grey2);padding:1px 5px;border-radius:3px;color:var(--blue2)}
+hr.div{border:none;border-top:1px solid var(--grey2);margin:22px 0}
+
+/* pipeline flow */
+.flow{display:flex;align-items:stretch;border:1px solid var(--grey3);border-radius:6px;overflow:hidden;margin:14px 0}
+.flow-step{flex:1;padding:12px 10px;border-right:1px solid var(--grey3);background:var(--grey1)}
+.flow-step:last-child{border-right:none}
+.flow-step.active{background:#fff8f8;border-top:3px solid var(--red)}
+.flow-step:not(.active){border-top:3px solid transparent}
+.fs-num{font-family:var(--mono);font-size:9px;color:var(--grey4);margin-bottom:3px}
+.fs-name{font-size:12px;font-weight:600;margin-bottom:3px}
+.flow-step.active .fs-name{color:var(--red)}
+.fs-desc{font-size:10px;color:var(--grey4);line-height:1.5}
+
+/* annotation box */
+.ann{background:#fffbe6;border:1px solid #ffe066;border-radius:4px;padding:9px 12px;margin:10px 0;font-size:11px;color:#664d00}
+.ann strong{color:#3d2e00}
+.ann.blue{background:#eef4ff;border-color:#c5d8f7;color:#0050a0}
+.ann.green{background:#f0fdf4;border-color:#86efac;color:#14532d}
+.ann.red{background:#fff8f8;border-color:#fca5a5;color:#7f1d1d}
+
+/* code block */
+pre{background:#1a1a2e;color:#e2e8f0;border-radius:6px;padding:16px;overflow-x:auto;margin:12px 0;font-family:var(--mono);font-size:11px;line-height:1.7}
+.kw{color:#93c5fd} .fn{color:#86efac} .cm{color:#64748b;font-style:italic}
+.st{color:#fde68a} .nu{color:#f0abfc} .op{color:#67e8f9}
+
+/* table */
+.dtbl{width:100%;border-collapse:collapse;margin:12px 0;font-size:12px}
+.dtbl th{background:var(--blue);color:#fff;padding:7px 10px;text-align:left;font-weight:600;font-size:11px}
+.dtbl td{padding:6px 10px;border-bottom:1px solid var(--grey2);color:var(--grey5);vertical-align:top}
+.dtbl tr:hover td{background:var(--grey1)}
+.dtbl td strong{color:var(--ink)}
+.dtbl td code{font-size:10px}
+
+/* regressor chart mockup */
+.reg-chart{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:14px 0}
+.reg-bar-wrap{background:var(--grey1);border:1px solid var(--grey3);border-radius:4px;padding:10px 12px}
+.reg-bar-label{font-size:10px;font-weight:600;color:var(--grey5);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.reg-bars{display:flex;gap:2px;align-items:flex-end;height:60px}
+.reg-bar{flex:1;border-radius:2px 2px 0 0;min-width:4px}
+.reg-x{display:flex;justify-content:space-between;font-size:9px;color:var(--grey4);margin-top:3px}
+
+/* callout grid */
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+.cg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:14px 0}
+.card{border:1px solid var(--grey3);border-radius:6px;padding:14px;background:#fff}
+.card.hl{border-left:3px solid var(--red)}
+.card h4{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:6px;text-transform:none;letter-spacing:0}
+.card p,.card li{font-size:12px;color:var(--grey5)}
+
+/* file box */
+.fbox{display:flex;gap:10px;align-items:flex-start;background:var(--grey1);border:1px solid var(--grey3);border-radius:5px;padding:10px 12px;margin:6px 0}
+.fbox-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.fbox-name{font-size:12px;font-weight:600;color:var(--ink);font-family:var(--mono);margin-bottom:2px}
+.fbox-desc{font-size:11px;color:var(--grey5)}
+.fbox-tag{display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px;text-transform:uppercase;letter-spacing:.05em;margin-left:6px}
+.tag-once{background:#fff3e0;color:#c45000}
+.tag-weekly{background:#f0fdf4;color:#107c10}
+.tag-output{background:#eef4ff;color:#0050a0}
+
+/* shortcut */
+.sc{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:12px 0}
+.si{display:flex;align-items:center;gap:10px;padding:6px 10px;background:var(--grey1);border-radius:4px}
+.sk{font-family:var(--mono);font-size:10px;font-weight:600;background:#fff;border:1px solid var(--grey3);border-radius:3px;padding:2px 6px;color:var(--blue2);white-space:nowrap;flex-shrink:0}
+.sd{font-size:11px;color:var(--grey5)}
+
+/* timeline */
+.timeline{display:flex;flex-direction:column;gap:0;margin:14px 0;border-left:2px solid var(--grey3);padding-left:16px}
+.tl-item{position:relative;padding:8px 0 8px 4px;border-bottom:1px dashed var(--grey2)}
+.tl-item:last-child{border-bottom:none}
+.tl-item::before{content:'';position:absolute;left:-21px;top:14px;width:8px;height:8px;border-radius:50%;border:2px solid var(--blue2);background:#fff}
+.tl-item.red::before{border-color:var(--red);background:var(--red)}
+.tl-when{font-size:10px;font-weight:700;color:var(--blue2);margin-bottom:3px;font-family:var(--mono)}
+.tl-item.red .tl-when{color:var(--red)}
+.tl-what{font-size:12px;color:var(--ink);font-weight:500;margin-bottom:2px}
+.tl-detail{font-size:11px;color:var(--grey5)}
+
+@media print{
+  .page{padding:24px 28px}
+  pre{font-size:10px}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-eye">Purolator — Internal Tool Documentation</div>
+  <div class="cover-title">Volume Planner<br>Pipeline, Model &amp; Integration Guide</div>
+  <div class="cover-sub">Full pipeline from Courier Ops → FMR → R Model equivalent → Forecast Review → Daily Distribution. Includes sample data, R model logic, regressors, and integration architecture.</div>
+  <div class="cover-meta">
+    <div class="cm"><span class="l">Version</span><span class="v">v15</span></div>
+    <div class="cm"><span class="l">Date</span><span class="v">June 2026</span></div>
+    <div class="cm"><span class="l">Built by</span><span class="v">Anay Baid</span></div>
+    <div class="cm"><span class="l">Product owner</span><span class="v">Mehrdad Dadgar</span></div>
+    <div class="cm"><span class="l">Status</span><span class="v">Internal — Not for distribution</span></div>
+  </div>
+</div>
+
+<!-- 01. FULL PIPELINE -->
+<div class="sec">
+  <div class="sec-hdr"><span class="sec-num">01</span><span class="sec-title">The full pipeline — end to end</span></div>
+
+  <p>This diagram shows every step from raw data to finalized daily forecast. The Volume Planner sits at step 4 — the human review step. Everything before it is Mehrdad's existing R/Python scripts. Everything after is what the app produces.</p>
+
+  <div class="flow">
+    <div class="flow-step">
+      <div class="fs-num">01</div>
+      <div class="fs-name">Courier Ops</div>
+      <div class="fs-desc">QlikView pull every Monday. Daily piece counts per terminal. Jan 01 → end of last week.</div>
+    </div>
+    <div class="flow-step">
+      <div class="fs-num">02</div>
+      <div class="fs-name">FMR Daily DB</div>
+      <div class="fs-desc">Pre-processing script. Historical (2012-2025) + Current year combined. 135 terminals × 13 years × 365 days.</div>
+    </div>
+    <div class="flow-step">
+      <div class="fs-num">03</div>
+      <div class="fs-name">FMR Weekly + Normalized</div>
+      <div class="fs-desc">Aggregate daily → weekly. Normalize. Feed to R model.</div>
+    </div>
+    <div class="flow-step active">
+      <div class="fs-num">04</div>
+      <div class="fs-name">Volume Planner</div>
+      <div class="fs-desc">Review chart. Adjust weeks. Validate daily shapes. Export finalized forecast.</div>
+    </div>
+    <div class="flow-step">
+      <div class="fs-num">05</div>
+      <div class="fs-name">Daily Distribution</div>
+      <div class="fs-desc">Multiply normalized weekly forecast by daily % allocation per terminal.</div>
+    </div>
+    <div class="flow-step">
+      <div class="fs-num">06</div>
+      <div class="fs-name">Final Daily Forecast</div>
+      <div class="fs-desc">Finalized daily piece counts per terminal. Goes to ops planning.</div>
+    </div>
+  </div>
+
+  <div class="ann blue"><strong>What the app does not run:</strong> Steps 1-3 are Mehrdad's external scripts. The app receives the output of step 3 (Actual.xlsx and Forecast.xlsx) as uploads. Steps 1-3 can optionally be triggered from within the app once the FMR pre-processing script is wired in.</div>
+
+  <h3>The two data sources (from whiteboard)</h3>
+  <div class="cg">
+    <div>
+      <div class="fbox">
+        <div class="fbox-icon">📦</div>
+        <div>
+          <div class="fbox-name">historical_fmr_2012_2025.parquet <span class="fbox-tag tag-once">Once per year</span></div>
+          <div class="fbox-desc">135 terminals × 13 years × 365 days = ~640,000 rows. Preferred format: Parquet (fast read, ~300KB). Updated every January with the previous full year appended. Never changes mid-year.</div>
+        </div>
+      </div>
+      <div class="fbox">
+        <div class="fbox-icon">📄</div>
+        <div>
+          <div class="fbox-name">current_year_2026_w01_wXX.csv <span class="fbox-tag tag-weekly">Every Monday</span></div>
+          <div class="fbox-desc">Current year daily actuals, Jan 01 → end of last week. Small file (~75KB for 24 weeks). Pulled from Courier Ops, pre-processed, re-uploaded each Monday after the R run.</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="fbox">
+        <div class="fbox-icon">📊</div>
+        <div>
+          <div class="fbox-name">Actual.xlsx (pre-processed) <span class="fbox-tag tag-weekly">Alternative upload</span></div>
+          <div class="fbox-desc">If Mehrdad's external pipeline already aggregates to weekly, upload this directly. Columns: Year, Week.Number, Terminal, Terminal.Name, Division, metric columns.</div>
+        </div>
+      </div>
+      <div class="fbox">
+        <div class="fbox-icon">📈</div>
+        <div>
+          <div class="fbox-name">Forecast.xlsx <span class="fbox-tag tag-weekly">From R model</span></div>
+          <div class="fbox-desc">R model STL+ARIMA output. Same column structure as Actual.xlsx but covering forecast weeks. App strips _EDITED suffix from column names automatically.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 02. FMR PRE-PROCESSING -->
+<div class="sec">
+  <div class="sec-hdr"><span class="sec-num">02</span><span class="sec-title">FMR pre-processing — what the app now does</span></div>
+
+  <p>Previously Mehrdad ran this step externally. The app now accepts both raw input files and runs the combine+aggregate step internally. The logic exactly mirrors what Mehrdad described on the whiteboard.</p>
+
+<pre><span class="cm"># Pseudocode for what /api/upload_fmr_historical and /api/upload_fmr_current do</span>
+
+<span class="cm"># Step 1: Load both files</span>
+hist_df  <span class="op">=</span> pd.read_parquet(<span class="st">"historical_fmr_2012_2025.parquet"</span>)   <span class="cm"># ~640k rows</span>
+curr_df  <span class="op">=</span> pd.read_csv(<span class="st">"current_year_2026_w01_w24.csv"</span>)             <span class="cm"># ~1344 rows</span>
+
+<span class="cm"># Step 2: Stack them (current year may have updated rows for tail of historical)</span>
+daily    <span class="op">=</span> pd.concat([hist_df, curr_df])
+daily    <span class="op">=</span> daily.drop_duplicates(
+              subset<span class="op">=</span>[<span class="st">"Year"</span>, <span class="st">"Week.Number"</span>, <span class="st">"Day"</span>, <span class="st">"Terminal"</span>],
+              keep<span class="op">=</span><span class="st">"last"</span>   <span class="cm"># current year wins over historical</span>
+           )
+
+<span class="cm"># Step 3: Aggregate daily → weekly (sum pieces per terminal per week)</span>
+METRICS  <span class="op">=</span> [<span class="st">"PCL.Del.Pcs.N"</span>, <span class="st">"Agent.Del.Pcs.N"</span>, <span class="st">"Total.Del.Pcs.N"</span>]
+weekly   <span class="op">=</span> (daily
+             .groupby([<span class="st">"Year"</span>, <span class="st">"Week.Number"</span>, <span class="st">"Terminal"</span>, <span class="st">"Division"</span>])
+             [METRICS].sum()
+             .reset_index()
+          )
+
+<span class="cm"># This weekly frame is now equivalent to Actual.xlsx</span>
+<span class="cm"># It is stored in memory and used by the chart and table endpoints</span>
+store[<span class="st">"actual"</span>] <span class="op">=</span> weekly</pre>
+
+  <div class="ann green"><strong>Result:</strong> After uploading both files, the app automatically runs this and populates the weekly actuals used by the chart. The metric selector, division filter, and terminal list all populate from this combined data. No manual export/import needed.</div>
+</div>
+
+<!-- 03. R MODEL EQUIVALENT -->
+<div class="sec">
+  <div class="sec-hdr"><span class="sec-num">03</span><span class="sec-title">The R model — what it does and how the app replicates it</span></div>
+
+  <p>Mehrdad's original model is an STL+ARIMA with external regressors, fit per terminal per metric in R. The app includes a Prophet-based equivalent for the 2027 forecast overlay. This section explains both.</p>
+
+  <h3>Mehrdad's R model (STL + ARIMA + xreg)</h3>
+
+<pre><span class="cm"># R pseudocode — Mehrdad's actual model structure</span>
+<span class="cm"># Fit per terminal, per metric. Then aggregate.</span>
+
+<span class="kw">for</span> terminal <span class="kw">in</span> terminals:
+  <span class="kw">for</span> metric <span class="kw">in</span> [PCL.Del.Pcs.N, Agent.Del.Pcs.N]:
+
+    <span class="cm"># 1. Build training series from normalized FMR weekly</span>
+    y       <span class="op">=</span> normalized_fmr_weekly[terminal, metric, year >= 2018]
+    xreg    <span class="op">=</span> cbind(cyber, catchup, amazon)   <span class="cm"># external regressors</span>
+
+    <span class="cm"># 2. Decompose with STL (Seasonal-Trend decomposition)</span>
+    stl_fit <span class="op">=</span> stl(y, s.window=<span class="st">"periodic"</span>)
+    remainder <span class="op">=</span> stl_fit$time.series[, <span class="st">"remainder"</span>]
+
+    <span class="cm"># 3. Fit ARIMA on the remainder with external regressors</span>
+    arima_fit <span class="op">=</span> auto.arima(remainder, xreg=xreg, stepwise=FALSE, approximation=FALSE)
+
+    <span class="cm"># 4. Forecast 52 weeks into 2027</span>
+    xreg_future  <span class="op">=</span> cbind(cyber_2027, catchup_2027, amazon_2027)
+    fc           <span class="op">=</span> forecast(arima_fit, h=52, xreg=xreg_future)
+
+    <span class="cm"># 5. Re-add STL seasonal component to ARIMA forecast</span>
+    seasonal_component <span class="op">=</span> stl_fit$time.series[, <span class="st">"seasonal"</span>]
+    final_forecast <span class="op">=</span> fc$mean + seasonal_component
+
+    <span class="cm"># 6. Clip negatives (convert_to_positive)</span>
+    final_forecast <span class="op">=</span> pmax(final_forecast, 0)
+
+    results[terminal, metric] <span class="op">=</span> final_forecast
+
+<span class="cm"># Total = PCL + Agent (never fit directly)</span>
+results[terminal, Total] <span class="op">=</span> results[terminal, PCL] + results[terminal, Agent]</pre>
+
+  <h3>The app's Prophet equivalent</h3>
+  <p>The app includes a Python Prophet model that produces a 2027 forecast overlay. It doesn't replace the R model but provides a visual comparison. The logic is in <code>prophet_pipeline/</code>.</p>
+
+<pre><span class="cm"># prophet_pipeline/model.py — simplified</span>
+<span class="kw">from</span> prophet <span class="kw">import</span> Prophet
+
+<span class="fn">def</span> fit_and_predict(train, future):
+    model <span class="op">=</span> Prophet(
+        yearly_seasonality <span class="op">=</span> <span class="kw">True</span>,
+        weekly_seasonality <span class="op">=</span> <span class="kw">False</span>,    <span class="cm"># data is already weekly</span>
+        seasonality_mode   <span class="op">=</span> <span class="st">"multiplicative"</span>,
+        interval_width     <span class="op">=</span> <span class="nu">0.8</span>
+    )
+    <span class="cm"># Add same regressors as R model</span>
+    model.add_regressor(<span class="st">"cyber"</span>)      <span class="cm"># Cyber Monday week flag</span>
+    model.add_regressor(<span class="st">"catchup"</span>)    <span class="cm"># Post-Cyber catch-up week flag</span>
+    model.add_regressor(<span class="st">"amazon"</span>)     <span class="cm"># Amazon weekly volume (continuous)</span>
+
+    model.fit(train)
+    forecast <span class="op">=</span> model.predict(future)
+    result[<span class="st">"yhat"</span>] <span class="op">=</span> forecast[<span class="st">"yhat"</span>].clip(lower<span class="op">=</span><span class="nu">0</span>)
+    <span class="kw">return</span> result</pre>
+
+  <div class="cg">
+    <div class="card">
+      <h4>R model strengths</h4>
+      <ul>
+        <li>STL handles the seasonal decomposition explicitly</li>
+        <li>ARIMA captures autocorrelation in the remainder</li>
+        <li>Per-terminal tuning (starting years, ARIMA order)</li>
+        <li>Proven on Purolator data for multiple years</li>
+        <li>8 variables with different starting years handled</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Prophet model (app) strengths</h4>
+      <ul>
+        <li>Runs inside the app — no R installation needed</li>
+        <li>Same three regressors: Cyber, Catchup, Amazon</li>
+        <li>Multiplicative seasonality handles Purolator's Q4 spikes</li>
+        <li>Cache invalidates on re-upload — always fresh</li>
+        <li>2027 overlay visible on same chart as 2026 for direct comparison</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 04. REGRESSORS -->
+<div class="sec">
+  <div class="sec-hdr"><span class="sec-num">04</span><span class="sec-title">Regressors — Cyber Week, Amazon, and how they work</span></div>
+
+  <p>Both the R model and the Prophet model use three external regressors. These are variables known in advance (for 2027) that meaningfully shift volume beyond what the seasonal pattern alone predicts.</p>
+
+  <table class="dtbl">
+    <thead><tr><th>Regressor</th><th>Type</th><th>Source file</th><th>What it captures</th><th>2027 approach</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>cyber</strong></td>
+        <td>Binary flag (0/1)</td>
+        <td><code>CyberWeekRegressor.xlsx</code></td>
+        <td>Cyber Monday week (W48 historically). Volume spikes 15-25% above seasonal baseline. Without this regressor the model undershoots peak badly.</td>
+        <td>Defaults to W48. Update <code>config.CYBER_WEEK_2027</code> once Purolator's 2027 fiscal calendar is confirmed.</td>
+      </tr>
+      <tr>
+        <td><strong>catchup</strong></td>
+        <td>Binary flag (0/1)</td>
+        <td><code>CyberWeekRegressor.xlsx</code></td>
+        <td>The week after Cyber (W49). Some volume delayed from W48 ships in W49. Smaller effect than Cyber but still significant.</td>
+        <td>Defaults to W49. Same update process as cyber.</td>
+      </tr>
+      <tr>
+        <td><strong>amazon</strong></td>
+        <td>Continuous (weekly volume)</td>
+        <td><code>AmazonRegressor.xlsx</code></td>
+        <td>Amazon's weekly parcel volume flowing through Purolator. Strong Q4 uplift (W47-W51) and Q1 reduction (W1-W4 "return season"). Continuous so the model captures the ramp-up and ramp-down shape, not just a flag.</td>
+        <td>2027 projected from 2026 using 2025→2026 YoY growth ratio per week. Clamped to 0.5×-1.5× to prevent noise from single-week anomalies.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="reg-chart">
+    <div class="reg-bar-wrap">
+      <div class="reg-bar-label">Cyber regressor (W47-W49)</div>
+      <div class="reg-bars">
+        <!-- W1-W52 simplified, only W48=cyber, W49=catchup spike -->
+        <div class="reg-bar" style="height:5%;background:#e0e0e0"></div>
+        <div class="reg-bar" style="height:5%;background:#e0e0e0"></div>
+        <div class="reg-bar" style="height:5%;background:#e0e0e0"></div>
+        <div class="reg-bar" style="height:5%;background:#e0e0e0"></div>
+        <div class="reg-bar" style="height:5%;background:#e0e0e0"></div>
+        <div class="reg-bar" style="height:5%;background:#e0e0e0"></div>
+        <div class="reg-bar" style="height:5%;background:#e0e0e0"></div>
+        <div class="reg-bar" style="height:5%;background:#e0e0e0"></div>
+        <div class="reg-bar" style="height:5%;background:#e0e0e0"></div>
+        <div class="reg-bar" style="height:100%;background:var(--red)"></div>
+        <div class="reg-bar" style="height:60%;background:var(--orange)"></div>
+        <div class="reg-bar" style="height:5%;background:#e0e0e0"></div>
+      </div>
+      <div class="reg-x"><span>W1</span><span>W48</span><span>W52</span></div>
+    </div>
+    <div class="reg-bar-wrap">
+      <div class="reg-bar-label">Amazon regressor (weekly vol)</div>
+      <div class="reg-bars">
+        <div class="reg-bar" style="height:30%;background:#60a5fa"></div>
+        <div class="reg-bar" style="height:28%;background:#60a5fa"></div>
+        <div class="reg-bar" style="height:32%;background:#60a5fa"></div>
+        <div class="reg-bar" style="height:35%;background:#60a5fa"></div>
+        <div class="reg-bar" style="height:38%;background:#60a5fa"></div>
+        <div class="reg-bar" style="height:42%;background:#60a5fa"></div>
+        <div class="reg-bar" style="height:45%;background:#60a5fa"></div>
+        <div class="reg-bar" style="height:55%;background:#3b82f6"></div>
+        <div class="reg-bar" style="height:75%;background:#2563eb"></div>
+        <div class="reg-bar" style="height:100%;background:#1d4ed8"></div>
+        <div class="reg-bar" style="height:85%;background:#2563eb"></div>
+        <div class="reg-bar" style="height:40%;background:#60a5fa"></div>
+      </div>
+      <div class="reg-x"><span>W1</span><span>Q4 peak</span><span>W52</span></div>
+    </div>
+    <div class="reg-bar-wrap">
+      <div class="reg-bar-label">Combined effect on forecast</div>
+      <div class="reg-bars">
+        <div class="reg-bar" style="height:45%;background:#e0e0e0"></div>
+        <div class="reg-bar" style="height:42%;background:#e0e0e0"></div>
+        <div class="reg-bar" style="height:44%;background:#e0e0e0"></div>
+        <div class="reg-bar" style="height:47%;background:#e0e0e0"></div>
+        <div class="reg-bar" style="height:48%;background:#e0e0e0"></div>
+        <div class="reg-bar" style="height:52%;background:#e0e0e0"></div>
+        <div class="reg-bar" style="height:55%;background:#e0e0e0"></div>
+        <div class="reg-bar" style="height:68%;background:var(--blue2)"></div>
+        <div class="reg-bar" style="height:88%;background:var(--blue2)"></div>
+        <div class="reg-bar" style="height:100%;background:var(--red)"></div>
+        <div class="reg-bar" style="height:80%;background:var(--orange)"></div>
+        <div class="reg-bar" style="height:50%;background:#e0e0e0"></div>
+      </div>
+      <div class="reg-x"><span>W1</span><span>Peak</span><span>W52</span></div>
+    </div>
+  </div>
+
+  <h3>2027 regressor projection logic</h3>
+  <p>Neither source file has 2027 data yet. The app generates it:</p>
+<pre><span class="cm"># prophet_pipeline/regressors.py — _build_2027_amazon()</span>
+
+<span class="cm"># Method: "per_week" (default) or "overall"</span>
+<span class="cm"># Per-week: ratio = amazon_2026[week] / amazon_2025[week] → applied to 2026</span>
+merged[<span class="st">"ratio"</span>] <span class="op">=</span> amazon_2026 <span class="op">/</span> amazon_2025   <span class="cm"># YoY growth per week</span>
+merged[<span class="st">"ratio"</span>] <span class="op">=</span> merged[<span class="st">"ratio"</span>].clip(
+    lower<span class="op">=</span><span class="nu">0.5</span>,    <span class="cm"># never project less than 50% of prior year</span>
+    upper<span class="op">=</span><span class="nu">1.5</span>     <span class="cm"># never project more than 150% (guards against anomaly weeks)</span>
+)
+amazon_2027 <span class="op">=</span> amazon_2026 <span class="op">*</span> merged[<span class="st">"ratio"</span>]
+
+<span class="cm"># Cyber/Catchup for 2027: default W48/W49 (same as 2026)</span>
+<span class="cm"># Update config.CYBER_WEEK_2027 and CATCHUP_WEEK_2027 when calendar is confirmed</span></pre>
+
+  <div class="ann"><strong>Update required each January:</strong> Set <code>config.CYBER_WEEK_2027</code> and <code>config.CATCHUP_WEEK_2027</code> to the real fiscal week numbers once Purolator publishes the 2027 fiscal calendar. Also update <code>AMAZON_2027_GROWTH_METHOD</code> if the Amazon growth pattern changes significantly.</div>
+</div>
+
+<!-- 05. SAMPLE FILES -->
+<div class="sec">
+  <div class="sec-hdr"><span class="sec-num">05</span><span class="sec-title">Sample data files — what to upload and in what format</span></div>
+
+  <p>The <code>sample_data/</code> folder in the zip contains three files that demonstrate the full upload workflow:</p>
+
+  <div class="fbox">
+    <div class="fbox-icon">📦</div>
+    <div>
+      <div class="fbox-name">historical_fmr_2018_2025.parquet <span class="fbox-tag tag-once">Upload once per year</span></div>
+      <div class="fbox-desc">Mock historical daily FMR data, 2018-2025, 8 terminals, all 7 days per week. Columns: Year, Week.Number, Day (1=Sun..7=Sat), Terminal, Terminal.Name, Division, PCL.Del.Pcs.N, Agent.Del.Pcs.N, Total.Del.Pcs.N. Real file would be 2012-2025, 135 terminals, ~640k rows.</div>
+    </div>
+  </div>
+
+  <div class="fbox">
+    <div class="fbox-icon">📄</div>
+    <div>
+      <div class="fbox-name">current_year_2026_w01_w24.csv <span class="fbox-tag tag-weekly">Re-upload every Monday</span></div>
+      <div class="fbox-desc">Current year daily actuals Jan 01 to Jun 20 (W1-W24). Same column structure as historical. This is what Mehrdad pulls from Courier Ops each Monday, pre-processes, and uploads. The app combines it with the historical file automatically.</div>
+    </div>
+  </div>
+
+  <div class="fbox">
+    <div class="fbox-icon">📊</div>
+    <div>
+      <div class="fbox-name">sample_actual.xlsx <span class="fbox-tag tag-output">Alternative — pre-aggregated</span></div>
+      <div class="fbox-desc">Already aggregated to weekly level (daily → weekly sum done externally). If the FMR pipeline runs outside the app, upload this directly to the "Upload Actual.xlsx" slot. Columns: Year, Week.Number, Terminal, Terminal.Name, Division, metrics.</div>
+    </div>
+  </div>
+
+  <hr class="div">
+  <h3>How to upload in the app</h3>
+  <ol>
+    <li>Open <code>http://localhost:5050</code></li>
+    <li>In the sidebar under <strong>FMR Pipeline (new)</strong>:
+      <ul>
+        <li>Click "Historical parquet (2012-2025)" → select <code>historical_fmr_2018_2025.parquet</code></li>
+        <li>Click "Current year CSV" → select <code>current_year_2026_w01_w24.csv</code></li>
+      </ul>
+    </li>
+    <li>The app automatically combines both and shows "Combined 24,640 daily rows into 3,520 weekly rows"</li>
+    <li>Click "Upload Forecast.xlsx" → upload Mehrdad's R model output</li>
+    <li>Select metric, pick filters, click Refresh Chart</li>
+  </ol>
+
+  <div class="ann blue"><strong>Alternatively</strong> if the FMR pipeline runs externally: skip steps 2-3 and just upload <code>sample_actual.xlsx</code> directly to the "Upload Actual.xlsx" slot.</div>
+</div>
+
+<!-- 06. REGULAR WEEKS -->
+<div class="sec">
+  <div class="sec-hdr"><span class="sec-num">06</span><span class="sec-title">Regular week assignments — Mehrdad's REGULAR_WEEKS dict</span></div>
+
+  <p>From Mehrdad's <code>helper_function.py</code> — the weeks used to derive the "regular" (non-holiday) daily distribution pattern per division. The app now stores and manages these. They are pre-loaded as defaults and can be edited, saved, exported, and re-imported.</p>
+
+  <table class="dtbl">
+    <thead><tr><th>Division</th><th>Year</th><th>Regular Weeks</th><th>Why these weeks</th></tr></thead>
+    <tbody>
+      <tr><td><strong>ATLANTIC</strong></td><td>2026</td><td><code>W19, W17, W16</code></td><td>Spring weeks with no holidays, stable Monday-Friday pattern.</td></tr>
+      <tr><td><strong>SOUTH WESTERN ONTARIO</strong></td><td>2026</td><td><code>W16, W17, W19, W22</code></td><td>Same rationale. W22 added for SWO's slightly different terminal mix.</td></tr>
+      <tr><td><strong>NORTH EASTERN ONTARIO</strong></td><td>2026</td><td><code>W17, W19, W22</code></td><td>Fewer terminals, fewer base weeks needed.</td></tr>
+      <tr><td><strong>GREATER TORONTO AREA</strong></td><td>2026</td><td><code>W16, W17, W18, W22</code></td><td>Largest terminal cluster. More weeks = better average.</td></tr>
+      <tr><td><strong>PACIFIC</strong></td><td>2026</td><td><code>W17, W18, W22</code></td><td>BC holidays differ from ON — W16 excluded (Family Day in BC is earlier).</td></tr>
+      <tr><td><strong>PRAIRIES</strong></td><td>2025</td><td><code>W4, W5, W18, W19</code></td><td>2025 reference year used — 2026 data not fully available yet at assignment time.</td></tr>
+      <tr><td><strong>PRAIRIES</strong></td><td>2026</td><td><code>W5, W17, W18</code></td><td>Updated once 2026 data confirmed.</td></tr>
+      <tr><td><strong>QUEBEC</strong></td><td>2026</td><td><code>W5, W6, W8, W16, W17, W18, W22</code></td><td>Most weeks — Quebec has more provincial holidays that need excluding, so more candidates needed for averaging.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="ann"><strong>How to update:</strong> On the Daily Distribution page, scroll to the "Regular Week Assignments" card. Select a division, enter the year and comma-separated week numbers, click Save. Export CSV to keep a record. The following January, update the weeks to reflect the new year's holiday-free weeks.</div>
+
+  <h3>How these weeks are used</h3>
+  <p>For each terminal, the app (and Mehrdad's script) takes the daily distribution for each of the regular weeks and averages them. The result is the "regular week" template — the Mon-Sun percentage shape applied to any non-event week for that terminal.</p>
+<pre><span class="cm"># For terminal 101 in GTA (regular weeks = W16, W17, W18, W22 of 2026)</span>
+reg_weeks   <span class="op">=</span> [<span class="nu">16</span>, <span class="nu">17</span>, <span class="nu">18</span>, <span class="nu">22</span>]
+daily_dists <span class="op">=</span> [daily_dist[terminal<span class="op">=</span><span class="nu">101</span>, year<span class="op">=</span><span class="nu">2026</span>, week<span class="op">=</span>w] <span class="kw">for</span> w <span class="kw">in</span> reg_weeks]
+
+<span class="cm"># Average across the 4 weeks</span>
+avg_dist <span class="op">=</span> mean(daily_dists)   <span class="cm"># shape: {Sun: 1%, Mon: 20%, Tue: 21%, ...}</span>
+
+<span class="cm"># Normalize to 100%</span>
+reg_template <span class="op">=</span> avg_dist <span class="op">/</span> avg_dist.sum() <span class="op">*</span> <span class="nu">100</span></pre>
+</div>
+
+<!-- 07. DAILY DISTRIBUTION WORKFLOW -->
+<div class="sec">
+  <div class="sec-hdr"><span class="sec-num">07</span><span class="sec-title">Daily distribution workflow — regular vs event weeks</span></div>
+
+  <p>From the whiteboard: daily distribution splits into two branches. The app handles both.</p>
+
+  <div class="cg">
+    <div class="card hl">
+      <h4>Regular weeks (Non-Holiday)</h4>
+      <p>All 52 weeks except the event weeks. One standard Mon-Sun shape per terminal per year. Derived from the regular week assignments (Section 06). Does not change during the year unless a planner manually overrides it.</p>
+      <ul>
+        <li>Typical shape: Sun ~1%, Mon-Thu ~19-22% each, Fri ~17%, Sat ~2.5%</li>
+        <li>Sums to exactly 100%</li>
+        <li>Set once per year per terminal</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Event weeks (Holiday + Peak-Prime)</h4>
+      <p>Canada Day (W27), Labour Day (W36), Thanksgiving (W41), Remembrance Day (W45), Peak/Prime (W47-49), Christmas (W51-52). Each has a different shape because holidays shift which days carry volume.</p>
+      <ul>
+        <li>Canada Day (Monday holiday): Mon near 0%, Tue-Fri elevated</li>
+        <li>Peak W47-49: Mon-Thu all elevated, Sat also higher than usual</li>
+        <li>Derived from 2-3 historical base years with same holiday weekday</li>
+        <li>Aggregated and normalized to 100%</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>The overlay system — how it works on screen</h3>
+  <ol>
+    <li>Navigate to event week (e.g. W27 Canada Day) on the Daily Distribution page</li>
+    <li>App auto-loads base weeks from event map: 2015 W27, 2020 W28</li>
+    <li>Blue solid line = current week distribution</li>
+    <li>Purple dashed = 2015 W27, Green dashed = 2020 W28</li>
+    <li>Orange bold = aggregated average of all overlays, normalized to 100%</li>
+    <li>Visually confirm the orange line looks right</li>
+    <li>If not — manually adjust in the edit table below</li>
+    <li>Save → downloads updated CSV → re-upload next session</li>
+  </ol>
+
+  <div class="ann blue"><strong>The key constraint Mehrdad stated:</strong> Summation MUST be 100% per terminal per week per metric. The app enforces this: the Total row turns red if off, the Normalize button proportionally adjusts all days, and Save refuses to proceed if the sum is not within 0.05% of 100%.</div>
+</div>
+
+<!-- 08. WEEKLY CADENCE -->
+<div class="sec">
+  <div class="sec-hdr"><span class="sec-num">08</span><span class="sec-title">Weekly cadence — who does what and when</span></div>
+
+  <div class="timeline">
+    <div class="tl-item red">
+      <div class="tl-when">Monday morning — Mehrdad</div>
+      <div class="tl-what">Run Courier Ops pull in QlikView</div>
+      <div class="tl-detail">Pull daily actuals for the week just ended. Pre-process using the R script (add to FMR, normalize). This produces the current year CSV and updated Actual.xlsx.</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-when">Monday — Mehrdad</div>
+      <div class="tl-what">Run R model → produces Forecast.xlsx</div>
+      <div class="tl-detail">STL+ARIMA with regressors runs on the updated normalized FMR weekly. Output: forecast CSV for all terminals all metrics through W52.</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-when">Monday — Planner</div>
+      <div class="tl-what">Upload files to Volume Planner app</div>
+      <div class="tl-detail">Upload current year CSV to FMR Pipeline section (or upload Actual.xlsx directly). Upload Forecast.xlsx. App combines, aggregates, populates chart and table.</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-when">Monday-Tuesday — Planning team</div>
+      <div class="tl-what">Review and adjust forecast</div>
+      <div class="tl-detail">Review chart. Select event weeks. Apply % adjustments. Validate daily distributions. Check selection KPI bar for YoY stats on adjusted weeks.</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-when">Tuesday — Planner</div>
+      <div class="tl-what">Export finalized forecast</div>
+      <div class="tl-detail">Click Export CSV. Finalized normalized weekly forecast goes to operations planning. If daily distribution was also updated, export that CSV too — it becomes next session's input.</div>
+    </div>
+    <div class="tl-item red">
+      <div class="tl-when">January — Mehrdad</div>
+      <div class="tl-what">Annual update</div>
+      <div class="tl-detail">Update historical parquet to include full 2026. Update event map with 2027 holiday weeks. Update regular week assignments for 2027. Update Cyber/Catchup week config if fiscal calendar changed.</div>
+    </div>
+  </div>
+</div>
+
+<!-- 09. CONFIG REFERENCE -->
+<div class="sec">
+  <div class="sec-hdr"><span class="sec-num">09</span><span class="sec-title">Configuration reference</span></div>
+
+  <p>All tunable parameters live in <code>prophet_pipeline/config.py</code>. Edit this file to change model behaviour without touching any other code.</p>
+
+  <table class="dtbl">
+    <thead><tr><th>Parameter</th><th>Default</th><th>What it does</th><th>When to change</th></tr></thead>
+    <tbody>
+      <tr><td><code>FORECAST_YEAR</code></td><td>2027</td><td>The year the model forecasts.</td><td>Every January — bump to 2028 etc.</td></tr>
+      <tr><td><code>DEFAULT_TRAIN_START_YEAR</code></td><td>2018</td><td>How far back Prophet trains. Earlier = more history but noisier if operations changed.</td><td>If a terminal restructured, add to <code>TRAIN_START_YEAR_OVERRIDES</code>.</td></tr>
+      <tr><td><code>CYBER_WEEK_2027</code></td><td>48</td><td>Fiscal week number for Cyber Monday 2027.</td><td>January — check Purolator fiscal calendar.</td></tr>
+      <tr><td><code>CATCHUP_WEEK_2027</code></td><td>49</td><td>Post-Cyber catch-up week.</td><td>January — usually Cyber + 1.</td></tr>
+      <tr><td><code>AMAZON_2027_GROWTH_METHOD</code></td><td>"per_week"</td><td>How to project 2027 Amazon volume. "per_week" = week-by-week ratio; "overall" = one ratio for all weeks.</td><td>If Amazon volume is very volatile, switch to "overall" for smoother projection.</td></tr>
+      <tr><td><code>AMAZON_2027_RATIO_MIN/MAX</code></td><td>0.5 / 1.5</td><td>Clamp on per-week Amazon growth ratio. Prevents noisy weeks from producing silly 2027 values.</td><td>If Amazon growth rate is consistently outside this range, widen the bounds.</td></tr>
+      <tr><td><code>PROPHET_PARAMS</code></td><td>see config.py</td><td>Prophet model settings. multiplicative seasonality, 80% confidence interval.</td><td>Rarely — only if forecast quality deteriorates significantly.</td></tr>
+      <tr><td><code>CLIP_NEGATIVE_TO_ZERO</code></td><td>True</td><td>Clip negative forecasts to zero. Same as R model's convert_to_positive().</td><td>Never change.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 10. NEXT STEPS -->
+<div class="sec">
+  <div class="sec-hdr"><span class="sec-num">10</span><span class="sec-title">What is built vs what is next</span></div>
+
+  <div class="cg3">
+    <div class="card hl">
+      <h4>Built and working</h4>
+      <ul>
+        <li>FMR parquet + CSV upload and combine</li>
+        <li>Weekly forecast chart with all line types</li>
+        <li>Prophet 2027 on same x-axis as 2026</li>
+        <li>Cyber + Catchup + Amazon regressors</li>
+        <li>Selection-range KPI bar</li>
+        <li>Daily dist overlay (Sun-Sat, multiple overlays, orange aggregate)</li>
+        <li>Regular week assignments (Mehrdad's dict, editable)</li>
+        <li>Event preferences save/export/import</li>
+        <li>Distribution change log</li>
+        <li>Multi-week daily comparison</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Next to build</h4>
+      <ul>
+        <li>Wire Mehrdad's pre-processing script as a backend function (he shares it, we wrap it)</li>
+        <li>Cell-level table selection</li>
+        <li>Chart week-range highlight</li>
+        <li>AWS/S3 deployment for file persistence</li>
+        <li>Parquet export of updated distribution</li>
+        <li>Version history for distribution file</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Longer term</h4>
+      <ul>
+        <li>Run R model from within app via subprocess</li>
+        <li>Gemini API for anomaly explanation</li>
+        <li>Ensemble forecast (Prophet + R model blend)</li>
+        <li>User auth + per-terminal access for field engineers</li>
+        <li>SharePoint integration for final export</li>
+        <li>TradingView-style zoomable chart</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
