@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Daily Distribution - Forecast Tool</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+/* ── Daily Distribution page specific styles ── */
+.dd-layout   { display:flex; gap:0; height:calc(100vh - 44px); overflow:hidden; }
+.dd-sidebar  { width:220px; min-width:180px; background:#f7f9fc; border-right:1px solid #e0e0e0;
+               overflow-y:auto; padding:12px 10px; flex-shrink:0; }
+.dd-main     { flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:16px; }
+
+.dd-card     { background:#fff; border:1px solid #e0e0e0; border-radius:6px; padding:14px 16px; }
+.dd-card h3  { margin:0 0 10px; font-size:13px; font-weight:700; color:#0070c0; }
+
+.dd-row      { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+.dd-field    { display:flex; flex-direction:column; gap:3px; }
+.dd-field label { font-size:11px; font-weight:600; color:#666; }
+.dd-field select, .dd-field input {
+  font-size:12px; padding:4px 7px; border:1px solid #ccc; border-radius:4px;
+  background:#fff; min-width:100px; }
+
+.dd-chart-wrap { position:relative; height:280px; }
+
+/* Day table */
+.day-edit-table { width:100%; border-collapse:collapse; font-size:12px; }
+.day-edit-table th { background:#e8f0fe; padding:5px 10px; text-align:left;
+                     font-weight:700; color:#0070c0; font-size:11px; }
+.day-edit-table td { padding:4px 10px; border-bottom:1px solid #f0f0f0; }
+.day-edit-table tr:last-child td { border-bottom:none; }
+.day-edit-table input[type=number] {
+  width:70px; padding:3px 5px; border:1px solid #ccc; border-radius:3px;
+  font-size:12px; text-align:right; }
+.day-edit-table .day-sum { font-weight:700; }
+.sum-ok   { color:#107c10; }
+.sum-warn { color:#d83b01; }
+
+/* Event info badge */
+.event-badge { display:inline-flex; align-items:center; gap:6px; padding:4px 10px;
+               background:#fff3e0; border:1px solid #ffb74d; border-radius:12px;
+               font-size:11px; color:#e65100; font-weight:600; }
+.reg-badge   { background:#e8f5e9; border-color:#81c784; color:#1b5e20; }
+
+/* Compare weeks */
+.comp-week-row { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+.comp-week-row input { width:55px; }
+.rm-btn { background:none; border:none; cursor:pointer; color:#999; font-size:14px; padding:0 4px; }
+.rm-btn:hover { color:#d32f2f; }
+
+/* Buttons */
+.dd-btn { padding:6px 14px; border:none; border-radius:4px; cursor:pointer;
+          font-size:12px; font-weight:600; }
+.dd-btn-primary { background:#0070c0; color:#fff; }
+.dd-btn-primary:hover { background:#005a9e; }
+.dd-btn-secondary { background:#e8f0fe; color:#0070c0; }
+.dd-btn-secondary:hover { background:#d0e4f7; }
+.dd-btn-save { background:#107c10; color:#fff; }
+.dd-btn-save:hover { background:#0b5e0b; }
+.dd-btn-warn { background:#d83b01; color:#fff; }
+
+.dd-status { font-size:11px; color:#666; margin-top:4px; min-height:16px; }
+.dd-status.ok  { color:#107c10; }
+.dd-status.err { color:#d83b01; }
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <div class="nav-logo">Forecast Tool</div>
+  <div class="nav-links">
+    <a href="/" class="nav-link">Weekly Forecast</a>
+    <a href="/daily_page" class="nav-link active">Daily Distribution</a>
+  </div>
+</nav>
+
+<div class="dd-layout">
+
+<!-- ── SIDEBAR ── -->
+<div class="dd-sidebar">
+
+  <div class="sec">Upload Files</div>
+
+  <div class="upload-wrap" style="margin-bottom:8px">
+    <div class="upload-tag" id="tag-daily-dist"
+         style="background:#f5f0ff;color:#5b21b6;border-color:#c4b5fd;font-size:11px">
+      Daily Dist CSV/XLSX
+    </div>
+    <input type="file" accept=".csv,.xlsx,.xls" onchange="uploadDist(this)">
+  </div>
+
+  <div class="upload-wrap" style="margin-bottom:12px">
+    <div class="upload-tag" id="tag-event-map"
+         style="background:#fff3e0;color:#e65100;border-color:#ffb74d;font-size:11px">
+      Event Map CSV/XLSX
+    </div>
+    <input type="file" accept=".csv,.xlsx,.xls" onchange="uploadEventMap(this)">
+  </div>
+
+  <hr>
+
+  <div class="sec">Filters</div>
+
+  <div class="dd-field" style="margin-bottom:8px">
+    <label>Division</label>
+    <select id="ddDivSel" onchange="onDivChange()">
+      <option value="">All Divisions</option>
+    </select>
+  </div>
+
+  <div class="dd-field" style="margin-bottom:8px">
+    <label>Terminal</label>
+    <select id="ddTermSel" onchange="refresh()">
+      <option value="">All Terminals</option>
+    </select>
+  </div>
+
+  <div class="dd-field" style="margin-bottom:8px">
+    <label>Week (1-52)</label>
+    <input type="number" id="ddWeekSel" min="1" max="52" value="1"
+           onchange="refresh()">
+  </div>
+
+  <div class="dd-field" style="margin-bottom:12px">
+    <label>Metric</label>
+    <select id="ddMetricSel" onchange="refresh()">
+      <option value="PCL.Del.Pcs.N">PCL Del Pieces</option>
+      <option value="Agent.Del.Pcs.N">Agent Del Pieces</option>
+      <option value="PCL.Del.Stops.N">PCL Del Stops</option>
+      <option value="PCL.PU.Pcs.N">PCL PU Pieces</option>
+      <option value="Agent.PU.Pcs.N">Agent PU Pieces</option>
+      <option value="Total.Del.Stops.N">Total Del Stops</option>
+      <option value="Total.PU.Stops.N">Total PU Stops</option>
+    </select>
+  </div>
+
+  <div class="dd-status" id="sidebarStatus">Upload dist file to begin.</div>
+
+  <hr>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Distribution Changes</div>
+    <div id="distChangelogPanel"
+         style="max-height:140px;overflow-y:auto;border:1px solid var(--line);border-radius:4px;background:#fff">
+      <div style="color:var(--ink-3);font-size:11px;padding:6px 8px">No changes this session</div>
+    </div>
+    <button class="dd-btn dd-btn-secondary" onclick="loadDistChangelog()"
+            style="margin-top:6px;width:100%;font-size:11px">Refresh Log</button>
+  </div>
+
+</div><!-- end sidebar -->
+
+<!-- ── MAIN ── -->
+<div class="dd-main">
+
+  <!-- Week info + event badge -->
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <div style="font-size:16px;font-weight:700;color:#1a1a1a" id="ddPageTitle">
+      Daily Distribution
+    </div>
+    <div id="weekTypeBadge"></div>
+  </div>
+
+  <!-- Chart card: primary + overlay + side-by-side compare -->
+  <div class="dd-card">
+
+    <!-- Controls row -->
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <span id="primaryChartTitle" style="font-size:12px;font-weight:700;color:var(--ink);flex:1">
+        Daily Distribution - Sun to Sat
+      </span>
+      <!-- View toggle -->
+      <button class="dd-btn dd-btn-secondary" onclick="setView('pct')" id="btnViewPct"
+        style="padding:4px 10px;font-size:11px">%</button>
+      <button class="dd-btn dd-btn-secondary" onclick="setView('vol')" id="btnViewVol"
+        style="padding:4px 10px;font-size:11px">Volume</button>
+
+      <span style="width:1px;height:18px;background:#e0e0e0"></span>
+
+      <!-- Overlay controls (superimposed on same canvas) -->
+      <span style="font-size:11px;color:#888;font-weight:600">Overlay:</span>
+      <input type="number" id="cmpYear" min="2012" max="2026" placeholder="Year"
+        style="width:62px;font-size:12px;padding:4px 7px;border:1px solid #ccc;border-radius:4px;outline:none">
+      <input type="number" id="cmpWeek" min="1" max="52" placeholder="Wk"
+        style="width:50px;font-size:12px;padding:4px 7px;border:1px solid #ccc;border-radius:4px;outline:none">
+      <button onclick="addOverlay()"
+        style="padding:4px 12px;font-size:11px;background:#0070c0;color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:600">Add</button>
+      <button onclick="clearOverlays()"
+        style="padding:4px 10px;font-size:11px;background:#eee;color:#444;border:1px solid #ddd;border-radius:4px;cursor:pointer">Clear</button>
+
+      <span style="width:1px;height:18px;background:#e0e0e0"></span>
+
+      <!-- Side-by-side compare -->
+      <span style="font-size:11px;color:#888;font-weight:600">Side by side:</span>
+      <input type="number" id="sbsWeek" min="1" max="52" placeholder="Wk"
+        style="width:50px;font-size:12px;padding:4px 7px;border:1px solid #ccc;border-radius:4px;outline:none">
+      <button onclick="loadSideBySide()"
+        style="padding:4px 12px;font-size:11px;background:#16a34a;color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:600">Compare</button>
+      <button onclick="clearSideBySide()" id="sbsClearBtn" style="display:none;padding:4px 10px;font-size:11px;background:#eee;color:#444;border:1px solid #ddd;border-radius:4px;cursor:pointer">Clear</button>
+    </div>
+
+    <!-- Overlay tags -->
+    <div id="overlayList" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;min-height:4px"></div>
+
+    <!-- Charts: primary always shown, side-by-side panel appears on Compare -->
+    <div style="display:flex;gap:12px;align-items:flex-start">
+
+      <!-- Primary chart -->
+      <div style="flex:1;min-width:0">
+        <div id="primaryChartLabel" style="font-size:10px;font-weight:700;color:#0070c0;
+             text-align:center;margin-bottom:4px;letter-spacing:.04em;text-transform:uppercase">
+          Week <span id="primaryWeekNum"></span>
+        </div>
+        <div class="dd-chart-wrap">
+          <canvas id="primaryChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Side-by-side chart (hidden until Compare clicked) -->
+      <div id="sbsPanel" style="display:none;flex:1;min-width:0">
+        <div id="sbsLabel" style="font-size:10px;font-weight:700;color:#16a34a;
+             text-align:center;margin-bottom:4px;letter-spacing:.04em;text-transform:uppercase">
+          Week <span id="sbsWeekNum"></span>
+        </div>
+        <div class="dd-chart-wrap">
+          <canvas id="sbsChart"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Edit table -->
+  <div class="dd-card">
+    <h3>Edit Distribution</h3>
+    <div style="font-size:11px;color:#666;margin-bottom:8px">
+      Edit % values below. Sum must be 100%. Changes apply to the selected terminal/division/week.
+    </div>
+    <table class="day-edit-table" id="editTable">
+      <thead><tr>
+        <th>Day</th>
+        <th>Current %</th>
+        <th>New %</th>
+      </tr></thead>
+      <tbody id="editTbody"></tbody>
+      <tfoot>
+        <tr>
+          <td style="font-weight:700">Total</td>
+          <td id="sumCurrent" class="day-sum">-</td>
+          <td id="sumNew" class="day-sum">-</td>
+        </tr>
+      </tfoot>
+    </table>
+    <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">
+      <button class="dd-btn dd-btn-secondary" onclick="normalizeInputs()">Normalize to 100%</button>
+      <button class="dd-btn dd-btn-save" onclick="saveChanges()">Save & Download CSV</button>
+      <button class="dd-btn" style="background:#eee;color:#444" onclick="resetEdits()">Reset</button>
+      <span class="dd-status" id="editStatus"></span>
+    </div>
+  </div>
+
+  <!-- Regular Week Assignments -->
+  <div class="dd-card" id="regularWeeksCard">
+    <h3>Regular Week Assignments</h3>
+    <div style="font-size:11px;color:#666;margin-bottom:10px">
+      Define which historical weeks represent the "regular" (non-event) distribution pattern
+      for each division. These are the base weeks Mehrdad uses to calculate the standard
+      Mon-Sun shape. Set once per year. Can be by division or by terminal.
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+      <select id="rwDivSel" class="dd-field" style="font-size:12px;padding:4px 7px;border:1px solid #ccc;border-radius:4px;min-width:140px">
+        <option value="">All Divisions</option>
+        <option>ATLANTIC</option>
+        <option>GREATER TORONTO AREA</option>
+        <option>NORTH EASTERN ONTARIO</option>
+        <option>PACIFIC</option>
+        <option>PRAIRIES</option>
+        <option>QUEBEC</option>
+        <option>SOUTH WESTERN ONTARIO</option>
+      </select>
+      <input type="number" id="rwYear" placeholder="Year" value="2026" min="2012" max="2030"
+        style="width:65px;font-size:12px;padding:4px 7px;border:1px solid #ccc;border-radius:4px">
+      <input type="text" id="rwWeeks" placeholder="Weeks e.g. 16,17,18,22"
+        style="width:160px;font-size:12px;padding:4px 7px;border:1px solid #ccc;border-radius:4px">
+      <button class="dd-btn dd-btn-primary" onclick="saveRegularWeeks()">Save</button>
+      <button class="dd-btn dd-btn-secondary" onclick="exportRegularWeeks()">Export CSV</button>
+      <label class="dd-btn" style="background:#e8f0fe;color:#0070c0;cursor:pointer;border:none">
+        Import CSV<input type="file" accept=".csv" onchange="importRegularWeeks(this)" style="display:none">
+      </label>
+    </div>
+
+    <div style="font-size:11px;font-weight:600;color:#444;margin-bottom:6px">
+      Current assignments — these weeks are used for the regular (non-event) distribution:
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:11px" id="rwTable">
+      <thead>
+        <tr style="background:#e8f0fe">
+          <th style="padding:5px 8px;text-align:left;color:#0070c0;font-weight:700">Division</th>
+          <th style="padding:5px 8px;text-align:left;color:#0070c0;font-weight:700">Year</th>
+          <th style="padding:5px 8px;text-align:left;color:#0070c0;font-weight:700">Regular Weeks</th>
+          <th style="padding:5px 8px"></th>
+        </tr>
+      </thead>
+      <tbody id="rwTbody"></tbody>
+    </table>
+    <div class="dd-status" id="rwStatus"></div>
+  </div>
+
+  <!-- Event info + preference editor -->
+  <div class="dd-card" id="eventInfoCard" style="display:none">
+    <h3>Event Week - Base Week Assignment</h3>
+    <div id="eventInfoContent" style="margin-bottom:10px;font-size:12px;color:#444"></div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:11px;font-weight:700;color:#444;text-transform:uppercase;letter-spacing:.05em">
+        Map this terminal to base weeks for this event
+      </div>
+
+      <div style="font-size:11px;color:#666;margin-bottom:4px">
+        Select up to 3 historical year+week combinations. The aggregated distribution
+        from those weeks will be used for this terminal on this event week.
+        The compare chart above updates live as you add weeks.
+      </div>
+
+      <div id="prefBaseWeeksList" style="display:flex;flex-direction:column;gap:6px"></div>
+
+      <div class="flex-row" style="gap:8px;flex-wrap:wrap">
+        <input type="number" id="prefYear" min="2012" max="2026" placeholder="Year"
+          style="width:70px;font-size:12px;padding:4px 7px;border:1px solid #ccc;border-radius:4px">
+        <input type="number" id="prefWeek" min="1" max="52" placeholder="Wk"
+          style="width:55px;font-size:12px;padding:4px 7px;border:1px solid #ccc;border-radius:4px">
+        <button class="dd-btn dd-btn-secondary" onclick="addPrefBaseWeek()">+ Add Base Week</button>
+      </div>
+
+      <div class="flex-row" style="gap:8px;margin-top:4px">
+        <button class="dd-btn dd-btn-primary" onclick="savePref()">Save Preference</button>
+        <button class="dd-btn dd-btn-secondary" onclick="exportEventPrefs()">Export Event Prefs CSV</button>
+        <button class="dd-btn" style="background:#eee;color:#444" onclick="clearPref()">Clear</button>
+      </div>
+      <div class="dd-status" id="prefStatus"></div>
+    </div>
+  </div>
+
+  <!-- Saved preferences table -->
+  <div class="dd-card" id="savedPrefsCard" style="display:none">
+    <h3>Saved Event Preferences</h3>
+    <div style="font-size:11px;color:#666;margin-bottom:8px">
+      All saved terminal-to-event-week mappings. Upload this CSV next session
+      to restore preferences.
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <button class="dd-btn dd-btn-secondary" onclick="exportEventPrefs()">Export CSV</button>
+      <label class="dd-btn" style="background:#e8f0fe;color:#0070c0;cursor:pointer">
+        Import CSV
+        <input type="file" accept=".csv" onchange="importEventPrefs(this)" style="display:none">
+      </label>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:11px" id="prefsTable">
+      <thead>
+        <tr style="background:#f0f4f8">
+          <th style="padding:5px 8px;text-align:left;color:#666">Terminal</th>
+          <th style="padding:5px 8px;text-align:left;color:#666">Event Week</th>
+          <th style="padding:5px 8px;text-align:left;color:#666">Event Name</th>
+          <th style="padding:5px 8px;text-align:left;color:#666">Base Weeks</th>
+          <th style="padding:5px 8px"></th>
+        </tr>
+      </thead>
+      <tbody id="prefsTbody"></tbody>
+    </table>
+  </div>
+
+</div><!-- end main -->
+</div><!-- end layout -->
+
+<script>
+// ── STATE ──
+let distLoaded  = false;
+let eventLoaded = false;
+let currentData = null;        // last /api/daily_dist_page response
+let primaryChart   = null;
+let compareChartObj = null;
+let viewMode = 'pct';          // 'pct' | 'vol'
+let weeklyTotal = 0;           // for volume view (placeholder - could be pulled from main page)
+let divTermMap = {};           // division → [terminal ids]
+let allTerminals = [];
+let overlays = [];
+let compareWeeks = [];         // [{year, week}]
+
+const WD_NAMES = {1:"Sunday",2:"Monday",3:"Tuesday",4:"Wednesday",
+                  5:"Thursday",6:"Friday",7:"Saturday"};
+const WD_ORDER = [1,2,3,4,5,6,7];
+const COLORS = {
+  primary:   '#0070c0',
+  compare0:  '#5b21b6',
+  compare1:  '#16a34a',
+  compare2:  '#dc2626',
+  aggregated:'#e65100',
+};
+
+// ── UPLOAD ──
+async function uploadDist(input) {
+  if (!input.files[0]) return;
+  setStatus('sidebarStatus','Uploading…','');
+  const fd = new FormData();
+  fd.append('kind','daily');
+  fd.append('file', input.files[0]);
+  const res  = await fetch('/api/upload', {method:'POST', body:fd});
+  const data = await res.json();
+  if (data.ok) {
+    document.getElementById('tag-daily-dist').textContent = '[OK] ' + input.files[0].name;
+    document.getElementById('tag-daily-dist').style.borderStyle = 'solid';
+    distLoaded = true;
+    setStatus('sidebarStatus','Dist loaded ('+data.rows+' rows)','ok');
+    await loadMetaAndRefresh();
+  } else {
+    setStatus('sidebarStatus','Error: '+(data.error||'unknown'),'err');
+  }
+}
+
+async function uploadEventMap(input) {
+  if (!input.files[0]) return;
+  const fd = new FormData();
+  fd.append('file', input.files[0]);
+  const res  = await fetch('/api/upload_event_map', {method:'POST', body:fd});
+  const data = await res.json();
+  if (data.ok) {
+    document.getElementById('tag-event-map').textContent = '[OK] ' + input.files[0].name;
+    document.getElementById('tag-event-map').style.borderStyle = 'solid';
+    eventLoaded = true;
+    refresh();
+  }
+}
+
+// ── META: populate division/terminal dropdowns from dist data ──
+async function loadMetaAndRefresh() {
+  // get unique divisions/terminals from a broad query
+  const body = {week:1, terminal:'', division:'', metric:'PCL.Del.Pcs.N', compare_weeks:[]};
+  const res  = await fetch('/api/daily_dist_page', {method:'POST',
+    headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  // we can't get full terminal list from this - use a dedicated approach
+  // For now: just refresh and let backend handle it
+  populateDivisions();
+  refresh();
+}
+
+function populateDivisions() {
+  const DIVS = ['','ATLANTIC','GREATER TORONTO AREA','NORTH EASTERN ONTARIO',
+                'PACIFIC','PRAIRIES','QUEBEC','SOUTH WESTERN ONTARIO'];
+  const sel = document.getElementById('ddDivSel');
+  sel.innerHTML = '';
+  DIVS.forEach(d => {
+    const o = document.createElement('option');
+    o.value = d; o.textContent = d || 'All Divisions';
+    sel.appendChild(o);
+  });
+}
+
+function onDivChange() {
+  // reset terminal list when division changes
+  document.getElementById('ddTermSel').innerHTML = '<option value="">All Terminals</option>';
+  refresh();
+}
+
+// ── MAIN REFRESH ──
+let lastAutoLoadedWeek = null;  // track which week we last auto-loaded overlays for
+
+async function refresh() {
+  if (!distLoaded) return;
+
+  const week     = +document.getElementById('ddWeekSel').value || 1;
+  const terminal = document.getElementById('ddTermSel').value;
+  const division = document.getElementById('ddDivSel').value;
+  const metric   = document.getElementById('ddMetricSel').value;
+
+  const body = {week, terminal, division, metric, compare_weeks: compareWeeks};
+  const res  = await fetch('/api/daily_dist_page', {method:'POST',
+    headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  currentData = await res.json();
+
+  document.getElementById('ddPageTitle').textContent =
+    `Daily Distribution - Week ${week}`;
+  const pwnEl = document.getElementById('primaryWeekNum');
+  if (pwnEl) pwnEl.textContent = week;
+
+  renderWeekBadge(currentData.event_info);
+  renderEditTable(currentData.primary);
+  renderCompareChart(currentData);
+  renderEventInfo(currentData.event_info);
+
+  // Auto-load overlays from event map / saved prefs when navigating to a new event week
+  // Mehrdad: "I would love having these ones as well next week to make sure"
+  if (currentData.event_info && week !== lastAutoLoadedWeek) {
+    lastAutoLoadedWeek = week;
+    overlays = [];  // clear existing overlays for new week
+    autoLoadEventOverlays(week, terminal, division, metric);
+  } else {
+    // just re-render with existing overlays
+    renderPrimaryChart(currentData);
+  }
+}
+
+async function autoLoadEventOverlays(week, terminal, division, metric) {
+  try {
+    const res = await fetch('/api/event_overlays', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({week, terminal, division, metric})
+    });
+    const data = await res.json();
+    if (data.overlays && data.overlays.length > 0) {
+      overlays = data.overlays.map(o => ({
+        year: o.year, week: o.week,
+        data: { days: o.days }
+      }));
+      renderOverlayTags();
+      // show a status note
+      setStatus('sidebarStatus',
+        `Auto-loaded ${overlays.length} base week${overlays.length>1?'s':''} for this event`, 'ok');
+    }
+  } catch(e) {
+    console.warn('auto-load overlays failed:', e);
+  }
+  renderPrimaryChart(currentData);
+}
+
+// ── WEEK TYPE BADGE ──
+function renderWeekBadge(eventInfo) {
+  const el = document.getElementById('weekTypeBadge');
+  if (!eventInfo) {
+    el.innerHTML = '<span class="reg-badge">Regular Week</span>';
+  } else {
+    el.innerHTML = `<span class="event-badge">⚡ ${eventInfo.event_name || 'Event Week'}</span>`;
+  }
+}
+
+// ── PRIMARY CHART ──
+function renderPrimaryChart(data) {
+  const primary = data.primary;
+  if (!primary) return;
+
+  const labels  = WD_ORDER.map(wd => WD_NAMES[wd].slice(0,3));
+  const OV_COLORS = ['#5b21b6','#16a34a','#dc2626','#d97706','#0891b2'];
+
+  function vals(days) {
+    return WD_ORDER.map(wd => {
+      const d = days.find(x => x.wd===wd) || {pct:0, volume:0};
+      return viewMode==='vol' ? Math.round(d.volume||0) : +d.pct.toFixed(2);
+    });
+  }
+
+  // Dataset 0: current selection (blue solid fill)
+  const week = +document.getElementById('ddWeekSel').value || 1;
+  const datasets = [{
+    label: `W${week} (current)`,
+    data: vals(primary),
+    borderColor: '#0070c0',
+    borderWidth: 2.5,
+    pointRadius: 5,
+    pointHoverRadius: 8,
+    backgroundColor: 'rgba(0,112,192,0.08)',
+    tension: 0.3,
+    fill: true,
+  }];
+
+  // Datasets 1..N: overlays (dashed, no fill)
+  (overlays||[]).forEach((ov, i) => {
+    if (!ov.data || !ov.data.days) return;
+    datasets.push({
+      label: `${ov.year} W${ov.week}`,
+      data: vals(ov.data.days),
+      borderColor: OV_COLORS[i % OV_COLORS.length],
+      borderWidth: 1.8,
+      borderDash: [5,3],
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      backgroundColor: 'transparent',
+      tension: 0.3,
+      fill: false,
+    });
+  });
+
+  // Aggregated average of all overlays (orange bold) — normalized to 100%
+  if ((overlays||[]).length > 0) {
+    const valid = overlays.filter(o => o.data && o.data.days);
+    if (valid.length > 0) {
+      const n = valid.length;
+      const aggRaw = WD_ORDER.map(wd => {
+        const sum = valid.reduce((s,o) => {
+          const d = o.data.days.find(x=>x.wd===wd)||{pct:0,volume:0};
+          return s + (viewMode==='vol' ? (d.volume||0) : d.pct);
+        }, 0);
+        return sum / n;
+      });
+      let agg = aggRaw;
+      if (viewMode==='pct') {
+        const tot = aggRaw.reduce((s,v)=>s+v,0);
+        agg = aggRaw.map(v => tot>0 ? +(v/tot*100).toFixed(2) : 0);
+      }
+      datasets.push({
+        label: `Aggregated avg (${valid.length} overlays)`,
+        data: agg,
+        borderColor: '#e65100',
+        borderWidth: 3,
+        pointRadius: 6,
+        pointHoverRadius: 9,
+        backgroundColor: 'rgba(230,81,0,0.06)',
+        tension: 0.3,
+        fill: false,
+      });
+    }
+  }
+
+  const yLabel = viewMode==='vol' ? 'Volume' : '% of Week';
+  if (primaryChart) primaryChart.destroy();
+  primaryChart = new Chart(document.getElementById('primaryChart').getContext('2d'), {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: datasets.length > 1,
+          position: 'top',
+          labels: { font:{size:10}, boxWidth:20, padding:8 }
+        },
+        tooltip: { callbacks: { label: ctx => {
+          const v = ctx.parsed.y;
+          return `${ctx.dataset.label}: ${viewMode==='vol' ? Math.round(v).toLocaleString() : v.toFixed(2)+'%'}`;
+        }}}
+      },
+      scales: {
+        x: { ticks:{font:{size:11}} },
+        y: {
+          min: 0,
+          ticks: { font:{size:11}, callback: v =>
+            viewMode==='vol' ? (v>=1000?Math.round(v/1000)+'k':v) : v.toFixed(1)+'%'
+          },
+          title: { display:true, text:yLabel, font:{size:10} }
+        }
+      }
+    }
+  });
+}
+
+function setView(mode) {
+  viewMode = mode;
+  document.getElementById('btnViewPct').style.fontWeight = mode==='pct'?'800':'400';
+  document.getElementById('btnViewVol').style.fontWeight = mode==='vol'?'800':'400';
+  if (currentData) renderPrimaryChart(currentData);
+  // re-render side-by-side chart too if visible
+  const sbsWk = +document.getElementById('sbsWeek').value;
+  if (sbsChart && sbsWk) loadSideBySide();
+}
+
+// ── EDIT TABLE ──
+function renderEditTable(primary) {
+  const tbody = document.getElementById('editTbody');
+  tbody.innerHTML = '';
+  if (!primary) { return; }
+
+  WD_ORDER.forEach(wd => {
+    const d   = primary.find(x => x.wd===wd) || {wd, pct:0};
+    const tr  = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-weight:600">${WD_NAMES[wd]}</td>
+      <td style="color:#0070c0;font-weight:600">${d.pct.toFixed(2)}%</td>
+      <td><input type="number" step="0.01" min="0" max="100"
+          value="${d.pct.toFixed(2)}"
+          data-wd="${wd}" oninput="updateSumNew(); liveUpdateChart()"></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('sumCurrent').textContent = '100.00%';
+  document.getElementById('sumCurrent').className = 'day-sum sum-ok';
+  updateSumNew();
+}
+
+function updateSumNew() {
+  const inputs = [...document.querySelectorAll('#editTbody input[type=number]')];
+  const sum = inputs.reduce((s,i) => s + (+i.value||0), 0);
+  const el = document.getElementById('sumNew');
+  el.textContent = sum.toFixed(2)+'%';
+  el.className = 'day-sum ' + (Math.abs(sum-100)<0.05?'sum-ok':'sum-warn');
+}
+
+function liveUpdateChart() {
+  // rebuild a synthetic primary from the current input values and redraw
+  if (!currentData) return;
+  const WD_ORDER = [1,2,3,4,5,6,7];
+  const WD_NAMES = {1:'Sunday',2:'Monday',3:'Tuesday',4:'Wednesday',5:'Thursday',6:'Friday',7:'Saturday'};
+  const inputs = [...document.querySelectorAll('#editTbody input[type=number]')];
+  const updated = inputs.map(inp => ({
+    wd:   +inp.dataset.wd,
+    day:  WD_NAMES[+inp.dataset.wd],
+    pct:  +inp.value || 0,
+    volume: 0
+  }));
+  // inject into currentData so renderPrimaryChart picks it up
+  const fake = {...currentData, primary: updated};
+  renderPrimaryChart(fake);
+}
+
+function normalizeInputs() {
+  const inputs = [...document.querySelectorAll('#editTbody input[type=number]')];
+  const sum = inputs.reduce((s,i) => s+(+i.value||0), 0);
+  if (sum <= 0) return;
+  let running = 0;
+  inputs.forEach((inp, idx) => {
+    if (idx < inputs.length-1) {
+      const norm = Math.round(+inp.value/sum*10000)/100;
+      inp.value = norm.toFixed(2);
+      running += norm;
+    } else {
+      inp.value = (100 - running).toFixed(2);
+    }
+  });
+  updateSumNew();
+}
+
+function resetEdits() {
+  if (currentData && currentData.primary) renderEditTable(currentData.primary);
+}
+
+async function saveChanges() {
+  const inputs  = [...document.querySelectorAll('#editTbody input[type=number]')];
+  const days    = inputs.map(inp => ({wd:+inp.dataset.wd, pct:+inp.value}));
+  const sum     = days.reduce((s,d)=>s+d.pct,0);
+  const statusEl = document.getElementById('editStatus');
+
+  if (Math.abs(sum-100) > 0.1) {
+    setStatus('editStatus','Sum must be 100% before saving. Use Normalize.','err');
+    return;
+  }
+
+  const body = {
+    week:     +document.getElementById('ddWeekSel').value,
+    terminal: document.getElementById('ddTermSel').value,
+    division: document.getElementById('ddDivSel').value,
+    metric:   document.getElementById('ddMetricSel').value,
+    days,
+  };
+
+  setStatus('editStatus','Saving…','');
+  const res = await fetch('/api/save_daily_dist', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+
+  if (res.ok) {
+    // trigger CSV download
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'daily_distribution_updated.csv';
+    a.click(); URL.revokeObjectURL(url);
+    setStatus('editStatus','Saved & downloaded. Upload this CSV next session.','ok');
+    refresh();
+  } else {
+    const err = await res.json();
+    setStatus('editStatus','Error: '+(err.error||'unknown'),'err');
+  }
+}
+
+// ── COMPARE WEEKS ──
+function addCompareWeek() {
+  // add a default entry then render inputs so user can change year/week
+  compareWeeks.push({year:2025, week:1});
+  renderCompareInputs();
+  // immediately fetch and overlay that default entry
+  fetchAndOverlay(2025, 1);
+}
+
+function renderCompareInputs() {
+  const el = document.getElementById('compareWeeksList');
+  if (!el) return;
+  el.innerHTML = '';
+  compareWeeks.forEach((cw, i) => {
+    const row = document.createElement('div');
+    row.className = 'comp-week-row';
+    row.innerHTML = `
+      <label style="font-size:11px;font-weight:600;color:#666">Year</label>
+      <input type="number" value="${cw.year}" min="2012" max="2026"
+             style="width:60px;font-size:12px;padding:3px 5px;border:1px solid #ccc;border-radius:4px"
+             onchange="compareWeeks[${i}].year=+this.value; syncOverlayFromInputs()">
+      <label style="font-size:11px;font-weight:600;color:#666">Week</label>
+      <input type="number" value="${cw.week}" min="1" max="52"
+             style="width:50px;font-size:12px;padding:3px 5px;border:1px solid #ccc;border-radius:4px"
+             onchange="compareWeeks[${i}].week=+this.value; syncOverlayFromInputs()">
+      <button class="rm-btn" onclick="removeCompareWeek(${i})">x</button>
+    `;
+    el.appendChild(row);
+  });
+}
+
+function removeCompareWeek(i) {
+  compareWeeks.splice(i, 1);
+  overlays.splice(i, 1);
+  renderCompareInputs();
+  if (currentData) renderPrimaryChart(currentData);
+}
+
+async function syncOverlayFromInputs() {
+  // rebuild overlays array from compareWeeks inputs
+  overlays = [];
+  for (const cw of compareWeeks) {
+    await fetchAndOverlay(cw.year, cw.week, false);
+  }
+  if (currentData) renderPrimaryChart(currentData);
+}
+
+async function fetchAndOverlay(yr, wk, redraw=true) {
+  const terminal = document.getElementById('ddTermSel').value;
+  const division = document.getElementById('ddDivSel').value;
+  const metric   = document.getElementById('ddMetricSel').value;
+  const res = await fetch('/api/daily_dist_page', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({week: wk, terminal, division, metric, compare_weeks: [{year: yr, week: wk}]})
+  });
+  const d = await res.json();
+  if (d.primary) {
+    // check if already in overlays
+    const existing = overlays.findIndex(o => o.year===yr && o.week===wk);
+    const entry = {year: yr, week: wk, data: {days: d.primary}};
+    if (existing >= 0) overlays[existing] = entry;
+    else overlays.push(entry);
+    if (redraw && currentData) renderPrimaryChart(currentData);
+  }
+}
+
+function renderCompareChart(data) {
+  // overlays are now drawn directly on the primary chart canvas
+  // this function is a no-op kept for compatibility
+  return;
+  const wrap = document.getElementById('compareChartWrap');
+  if (!data.compare || data.compare.length===0) {
+    wrap.style.display='none';
+    if (compareChartObj) { compareChartObj.destroy(); compareChartObj=null; }
+    return;
+  }
+  wrap.style.display='block';
+
+  const labels = WD_ORDER.map(wd => WD_NAMES[wd].slice(0,3));
+
+  const datasets = [];
+
+  // primary line
+  if (data.primary) {
+    datasets.push({
+      label: `W${data.week} (current)`,
+      data: WD_ORDER.map(wd => (data.primary.find(x=>x.wd===wd)||{pct:0}).pct),
+      borderColor: COLORS.primary, borderWidth:2,
+      pointRadius:4, tension:0.3, fill:false,
+    });
+  }
+
+  // compare lines
+  data.compare.forEach((cw, i) => {
+    const color = [COLORS.compare0,COLORS.compare1,COLORS.compare2][i%3];
+    datasets.push({
+      label: `${cw.year} W${cw.week}`,
+      data: WD_ORDER.map(wd => (cw.days.find(x=>x.wd===wd)||{pct:0}).pct),
+      borderColor: color, borderWidth:1.5, borderDash:[4,3],
+      pointRadius:3, tension:0.3, fill:false,
+    });
+  });
+
+  // aggregated line
+  if (data.aggregated) {
+    datasets.push({
+      label: 'Aggregated avg',
+      data: WD_ORDER.map(wd => (data.aggregated.find(x=>x.wd===wd)||{pct:0}).pct),
+      borderColor: COLORS.aggregated, borderWidth:2.5,
+      pointRadius:5, tension:0.3, fill:false,
+    });
+  }
+
+  if (compareChartObj) compareChartObj.destroy();
+  const ctx = document.getElementById('compareChart').getContext('2d');
+  compareChartObj = new Chart(ctx, {
+    type:'line', data:{labels, datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:16}}},
+      scales:{
+        x:{ticks:{font:{size:11}}},
+        y:{min:0, ticks:{font:{size:11},
+           callback:v=>v.toFixed(1)+'%'},
+           title:{display:true,text:'% of Week',font:{size:11}}}
+      }
+    }
+  });
+}
+
+// ── EVENT INFO PANEL ──
+// current pref state being edited
+let prefBaseWeeks = [];
+let currentEventInfo = null;
+
+function renderEventInfo(eventInfo) {
+  const card    = document.getElementById('eventInfoCard');
+  const content = document.getElementById('eventInfoContent');
+  currentEventInfo = eventInfo;
+
+  if (!eventInfo) { card.style.display='none'; return; }
+
+  card.style.display='block';
+
+  // show event name + any existing saved pref for this terminal+week
+  const terminal = document.getElementById('ddTermSel').value;
+  const week     = +document.getElementById('ddWeekSel').value;
+
+  content.innerHTML = `
+    <span style="background:#fff3e0;border:1px solid #ffb74d;border-radius:10px;
+                 padding:2px 10px;font-size:11px;color:#e65100;font-weight:700">
+      ${eventInfo.event_name || 'Event Week'}
+    </span>
+    ${terminal ? `<span style="font-size:11px;color:#666;margin-left:8px">Terminal ${terminal} | Week ${week}</span>` : ''}
+  `;
+
+  // load existing saved pref for this terminal+week into the editor
+  loadPrefForCurrentSelection();
+
+  // also auto-populate compare chart
+  if (eventInfo.base_weeks && eventInfo.base_weeks.length > 0 && compareWeeks.length===0) {
+    compareWeeks = [...eventInfo.base_weeks];
+    renderCompareInputs();
+    refresh();
+  }
+
+  // show saved prefs table
+  loadSavedPrefs();
+}
+
+async function loadPrefForCurrentSelection() {
+  const terminal = document.getElementById('ddTermSel').value;
+  const week     = document.getElementById('ddWeekSel').value;
+  if (!terminal) return;
+
+  try {
+    const res  = await fetch('/api/event_prefs');
+    const data = await res.json();
+    const pref = data.prefs?.[terminal]?.[week];
+    if (pref && pref.base_weeks) {
+      prefBaseWeeks = [...pref.base_weeks];
+    } else {
+      // fall back to event map defaults
+      prefBaseWeeks = currentEventInfo?.base_weeks ? [...currentEventInfo.base_weeks] : [];
+    }
+  } catch(e) {
+    prefBaseWeeks = currentEventInfo?.base_weeks ? [...currentEventInfo.base_weeks] : [];
+  }
+  renderPrefBaseWeeks();
+}
+
+function renderPrefBaseWeeks() {
+  const el = document.getElementById('prefBaseWeeksList');
+  if (!el) return;
+  if (!prefBaseWeeks.length) {
+    el.innerHTML = '<div style="font-size:11px;color:#aaa">No base weeks set yet.</div>';
+    return;
+  }
+  el.innerHTML = prefBaseWeeks.map((bw, i) => `
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="background:#e8f0fe;border-radius:10px;padding:2px 10px;
+                   font-size:11px;color:#0070c0;font-weight:600">${bw.year} W${bw.week}</span>
+      <button onclick="removePrefBaseWeek(${i})"
+        style="background:none;border:none;cursor:pointer;color:#999;font-size:12px;padding:0 4px">x</button>
+    </div>`).join('');
+}
+
+function addPrefBaseWeek() {
+  const yr  = +document.getElementById('prefYear').value;
+  const wk  = +document.getElementById('prefWeek').value;
+  if (!yr || !wk) return;
+  if (prefBaseWeeks.length >= 3) {
+    setStatus('prefStatus', 'Max 3 base weeks allowed.', 'err');
+    return;
+  }
+  prefBaseWeeks.push({year: yr, week: wk});
+  renderPrefBaseWeeks();
+  document.getElementById('prefYear').value = '';
+  document.getElementById('prefWeek').value = '';
+
+  // also add to compare chart
+  compareWeeks = [...prefBaseWeeks];
+  renderCompareInputs();
+  refresh();
+}
+
+function removePrefBaseWeek(i) {
+  prefBaseWeeks.splice(i, 1);
+  renderPrefBaseWeeks();
+  compareWeeks = [...prefBaseWeeks];
+  renderCompareInputs();
+  refresh();
+}
+
+function clearPref() {
+  prefBaseWeeks = [];
+  renderPrefBaseWeeks();
+  compareWeeks = [];
+  renderCompareInputs();
+  refresh();
+}
+
+async function savePref() {
+  const terminal  = document.getElementById('ddTermSel').value;
+  const week      = +document.getElementById('ddWeekSel').value;
+  const eventName = currentEventInfo?.event_name || '';
+
+  if (!terminal) {
+    setStatus('prefStatus', 'Select a specific terminal first.', 'err');
+    return;
+  }
+  if (!prefBaseWeeks.length) {
+    setStatus('prefStatus', 'Add at least one base week.', 'err');
+    return;
+  }
+
+  setStatus('prefStatus', 'Saving...', '');
+  const res  = await fetch('/api/event_prefs', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({terminal, week, event_name: eventName, base_weeks: prefBaseWeeks})
+  });
+  const data = await res.json();
+  if (data.ok) {
+    setStatus('prefStatus', `Saved: Terminal ${terminal}, Week ${week}`, 'ok');
+    loadSavedPrefs();
+  } else {
+    setStatus('prefStatus', 'Error: ' + (data.error||'unknown'), 'err');
+  }
+}
+
+async function loadSavedPrefs() {
+  const card = document.getElementById('savedPrefsCard');
+  const tbody = document.getElementById('prefsTbody');
+  const res  = await fetch('/api/event_prefs');
+  const data = await res.json();
+  const prefs = data.prefs || {};
+  const rows = [];
+  for (const [term, weeks] of Object.entries(prefs)) {
+    for (const [wk, pref] of Object.entries(weeks)) {
+      rows.push({terminal:term, week:wk, ...pref});
+    }
+  }
+  if (!rows.length) { card.style.display='none'; return; }
+  card.style.display='block';
+  tbody.innerHTML = rows.map(r => {
+    const bwStr = (r.base_weeks||[]).map(b => `${b.year} W${b.week}`).join(', ');
+    return `<tr style="border-bottom:1px solid #eee">
+      <td style="padding:5px 8px;font-weight:600">${r.terminal}</td>
+      <td style="padding:5px 8px">Week ${r.week}</td>
+      <td style="padding:5px 8px;color:#e65100">${r.event_name||'-'}</td>
+      <td style="padding:5px 8px;color:#0070c0">${bwStr||'-'}</td>
+      <td style="padding:5px 8px">
+        <button onclick="deletePref('${r.terminal}',${r.week})"
+          style="background:none;border:none;cursor:pointer;color:#c00;font-size:11px">Remove</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function deletePref(terminal, week) {
+  await fetch(`/api/event_prefs/${terminal}/${week}`, {method:'DELETE'});
+  loadSavedPrefs();
+}
+
+function exportEventPrefs() {
+  window.location.href = '/api/export_event_prefs';
+}
+
+async function importEventPrefs(input) {
+  const file = input.files[0]; if (!file) return;
+  const fd = new FormData(); fd.append('file', file);
+  const res  = await fetch('/api/import_event_prefs', {method:'POST', body:fd});
+  const data = await res.json();
+  if (data.ok) {
+    setStatus('prefStatus', `Imported ${data.imported} preferences`, 'ok');
+    loadSavedPrefs();
+  } else {
+    setStatus('prefStatus', 'Import error: ' + (data.error||''), 'err');
+  }
+}
+
+// ── OVERLAY MANAGEMENT ──
+async function addOverlay() {
+  const yr  = +document.getElementById('cmpYear').value;
+  const cwk = +document.getElementById('cmpWeek').value;
+  if (!yr || !cwk) return;
+  const terminal = document.getElementById('ddTermSel').value;
+  const division = document.getElementById('ddDivSel').value;
+  const metric   = document.getElementById('ddMetricSel').value;
+  const res = await fetch('/api/daily_dist_page', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({week:cwk, terminal, division, metric, compare_weeks:[{year:yr,week:cwk}]})
+  });
+  const d = await res.json();
+  if (d.primary) {
+    overlays = overlays || [];
+    overlays.push({year:yr, week:cwk, data:{days:d.primary}});
+    renderOverlayTags();
+    if (currentData) renderPrimaryChart(currentData);
+  }
+  document.getElementById('cmpYear').value='';
+  document.getElementById('cmpWeek').value='';
+}
+
+function clearOverlays() {
+  overlays = [];
+  renderOverlayTags();
+  if (currentData) renderPrimaryChart(currentData);
+}
+
+function removeOverlay(i) {
+  overlays.splice(i,1);
+  renderOverlayTags();
+  if (currentData) renderPrimaryChart(currentData);
+}
+
+function renderOverlayTags() {
+  const el = document.getElementById('overlayList');
+  if (!el) return;
+  if (!overlays || !overlays.length) { el.innerHTML=''; return; }
+  const OV_COLORS = ['#5b21b6','#16a34a','#dc2626','#d97706','#0891b2'];
+  el.innerHTML = overlays.map((o,i) => `
+    <span style="display:inline-flex;align-items:center;gap:4px;
+      background:var(--surface);border:1px solid ${OV_COLORS[i%OV_COLORS.length]};
+      border-radius:4px;padding:2px 8px;font-size:11px;
+      color:${OV_COLORS[i%OV_COLORS.length]};font-weight:600;font-family:var(--mono)">
+      ${o.year} W${o.week}
+      <button onclick="removeOverlay(${i})"
+        style="background:none;border:none;cursor:pointer;color:#999;font-size:12px;padding:0 2px;line-height:1">x</button>
+    </span>`).join('');
+}
+
+// ── REGULAR WEEK ASSIGNMENTS ──
+// Seeded with Mehrdad's actual values from helper_function.py as defaults
+// User can modify, save, export, reimport
+
+async function saveRegularWeeks() {
+  const div   = document.getElementById('rwDivSel').value;
+  const year  = +document.getElementById('rwYear').value;
+  const wkStr = document.getElementById('rwWeeks').value;
+  if (!div || !year || !wkStr) { setStatus('rwStatus','Fill in all fields.','err'); return; }
+  const weeks = wkStr.split(',').map(w => +w.trim()).filter(w => w > 0 && w <= 52);
+  if (!weeks.length) { setStatus('rwStatus','Enter valid week numbers.','err'); return; }
+  const res  = await fetch('/api/regular_weeks', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({division: div, year, weeks})
+  });
+  const data = await res.json();
+  if (data.ok) { setStatus('rwStatus','Saved.','ok'); loadRegularWeeks(); }
+  else { setStatus('rwStatus','Error: '+(data.error||''), 'err'); }
+}
+
+async function loadRegularWeeks() {
+  const res  = await fetch('/api/regular_weeks');
+  const data = await res.json();
+  const tbody = document.getElementById('rwTbody');
+  if (!tbody) return;
+  const rows = data.assignments || [];
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="padding:8px;color:#aaa;font-size:11px">No assignments yet. Add above or import CSV.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map((r,i) => `
+    <tr style="border-bottom:1px solid #eee">
+      <td style="padding:5px 8px;font-weight:600">${r.division}</td>
+      <td style="padding:5px 8px">${r.year}</td>
+      <td style="padding:5px 8px;color:#0070c0">W${r.weeks.join(', W')}</td>
+      <td style="padding:5px 8px">
+        <button onclick="deleteRegularWeek('${r.division}',${r.year})"
+          style="background:none;border:none;cursor:pointer;color:#c00;font-size:11px">Remove</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function deleteRegularWeek(division, year) {
+  await fetch(`/api/regular_weeks/${encodeURIComponent(division)}/${year}`, {method:'DELETE'});
+  loadRegularWeeks();
+}
+
+function exportRegularWeeks() { window.location.href = '/api/export_regular_weeks'; }
+
+async function importRegularWeeks(input) {
+  const file = input.files[0]; if (!file) return;
+  const fd = new FormData(); fd.append('file', file);
+  const res  = await fetch('/api/import_regular_weeks', {method:'POST', body:fd});
+  const data = await res.json();
+  if (data.ok) { setStatus('rwStatus',`Imported ${data.imported} assignments.`,'ok'); loadRegularWeeks(); }
+  else { setStatus('rwStatus','Import error: '+(data.error||''),'err'); }
+}
+
+// ── DISTRIBUTION CHANGELOG ──
+async function loadDistChangelog() {
+  const res  = await fetch('/api/dist_changelog');
+  const data = await res.json();
+  const panel = document.getElementById('distChangelogPanel');
+  if (!panel) return;
+  const log = data.changelog || [];
+  if (!log.length) {
+    panel.innerHTML = '<div style="color:var(--ink-3);font-size:11px;padding:6px 8px">No changes this session</div>';
+    return;
+  }
+  // show most recent first
+  const rows = [...log].reverse().map(e => `
+    <div style="padding:4px 8px;border-bottom:1px solid var(--line-2);font-size:10px;line-height:1.6">
+      <div style="font-family:var(--mono);font-weight:700;color:var(--blue)">
+        T${e.terminal} W${e.week} ${e.day_name}
+      </div>
+      <div style="color:var(--ink-2)">
+        ${e.metric.replace('.N','').replace('.',' ')}:
+        <span style="color:var(--red)">${e.old_pct.toFixed(2)}%</span>
+        &rarr;
+        <span style="color:var(--green)">${e.new_pct.toFixed(2)}%</span>
+      </div>
+      <div style="color:var(--ink-3)">${e.ts}</div>
+    </div>`).join('');
+  panel.innerHTML = rows;
+}
+
+// ── SIDE BY SIDE COMPARE ──
+let sbsChart = null;
+
+async function loadSideBySide() {
+  const week2 = +document.getElementById('sbsWeek').value;
+  if (!week2) return;
+
+  const terminal = document.getElementById('ddTermSel').value;
+  const division = document.getElementById('ddDivSel').value;
+  const metric   = document.getElementById('ddMetricSel').value;
+
+  const body = {week: week2, terminal, division, metric, compare_weeks: []};
+  const res  = await fetch('/api/daily_dist_page', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+
+  const panel = document.getElementById('sbsPanel');
+  panel.style.display = 'flex';
+  panel.style.flexDirection = 'column';
+
+  const wkEl = document.getElementById('sbsWeekNum');
+  if (wkEl) wkEl.textContent = week2;
+
+  // show week type badge next to label
+  const lbl = document.getElementById('sbsLabel');
+  if (lbl) {
+    const badge = data.event_info
+      ? ` <span style="color:#e65100;font-size:9px">${data.event_info.event_name}</span>`
+      : ' <span style="color:#107c10;font-size:9px">Regular</span>';
+    lbl.innerHTML = `Week ${week2}` + badge;
+  }
+
+  document.getElementById('sbsClearBtn').style.display = 'inline-block';
+  renderSbsChart(data.primary, week2);
+}
+
+function renderSbsChart(primary, week2) {
+  if (sbsChart) sbsChart.destroy();
+  if (!primary) return;
+
+  const WD_ORDER = [1,2,3,4,5,6,7];
+  const WD_NAMES = {1:'Sun',2:'Mon',3:'Tue',4:'Wed',5:'Thu',6:'Fri',7:'Sat'};
+  const labels = WD_ORDER.map(wd => WD_NAMES[wd]);
+
+  const vals = WD_ORDER.map(wd => {
+    const d = primary.find(x => x.wd===wd) || {pct:0, volume:0};
+    return viewMode === 'vol' ? Math.round(d.volume||0) : +(d.pct||0).toFixed(2);
+  });
+
+  sbsChart = new Chart(document.getElementById('sbsChart').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: `W${week2}`,
+        data: vals,
+        borderColor: '#16a34a', borderWidth: 2.5,
+        pointRadius: 5, pointHoverRadius: 8,
+        backgroundColor: 'rgba(22,163,74,0.08)',
+        tension: 0.3, fill: true,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {display: false},
+        tooltip: {callbacks: {label: ctx => {
+          const v = ctx.parsed.y;
+          return viewMode === 'vol'
+            ? Math.round(v).toLocaleString()
+            : v.toFixed(2) + '%';
+        }}}
+      },
+      scales: {
+        x: {ticks: {font: {size: 11}}},
+        y: {
+          min: 0,
+          ticks: {font: {size: 11}, callback: v =>
+            viewMode === 'vol'
+              ? (v >= 1000 ? Math.round(v/1000)+'k' : v)
+              : v.toFixed(1)+'%'
+          }
+        }
+      }
+    }
+  });
+}
+
+function clearSideBySide() {
+  if (sbsChart) { sbsChart.destroy(); sbsChart = null; }
+  document.getElementById('sbsPanel').style.display = 'none';
+  document.getElementById('sbsClearBtn').style.display = 'none';
+  document.getElementById('sbsWeek').value = '';
+}
+
+// ── UTIL ──
+function setStatus(id, msg, cls) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'dd-status ' + cls;
+}
+
+// init
+populateDivisions();
+loadRegularWeeks();
+</script>
+</body>
+</html>

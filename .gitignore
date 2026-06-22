@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+.venv/
+*.xlsx
+!data/*.xlsx
+.DS_Store

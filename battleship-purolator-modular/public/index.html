@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Purolator (Driver Battle League)</title>
+<script src="/socket.io/socket.io.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+<div class="reconnect-bar" id="reconnect-bar">
+  <span>⚠</span><span id="reconnect-msg">Connection lost — reconnecting…</span>
+</div>
+
+<!-- SETTINGS -->
+<div class="settings-overlay" id="settings-overlay" onclick="closeSettings(event)">
+  <div class="settings-panel">
+    <div class="settings-hdr">
+      <span class="settings-title">⚙ Display Settings</span>
+      <button class="settings-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="settings-body">
+      <div class="setting-group">
+        <div class="setting-label">Grid Cell Size</div>
+        <div class="setting-desc">Resize the board to fit your screen</div>
+        <div class="range-row">
+          <input type="range" min="26" max="54" step="2" value="36" id="cell-slider" oninput="updateCell(this.value)">
+          <span class="range-val" id="cell-val">36px</span>
+        </div>
+      </div>
+      <div class="setting-group">
+        <div class="setting-label">Font Scale</div>
+        <div class="range-row">
+          <input type="range" min=".85" max="1.25" step=".05" value="1" id="font-slider" oninput="updateFont(this.value)">
+          <span class="range-val" id="font-val">100%</span>
+        </div>
+      </div>
+      <div class="setting-group">
+        <div class="setting-label">Interface Options</div>
+        <div class="toggle-row">
+          <span class="toggle-label">Sidebar Panel</span>
+          <button class="toggle-switch on" id="tog-sidebar" onclick="toggleSidebar()"></button>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Move Notifications</span>
+          <button class="toggle-switch on" id="tog-toasts" onclick="toggleOpt('toasts','tog-toasts')"></button>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Hit Animations</span>
+          <button class="toggle-switch on" id="tog-anim" onclick="toggleOpt('animations','tog-anim')"></button>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Ship Health Bars</span>
+          <button class="toggle-switch on" id="tog-health" onclick="toggleOpt('healthBars','tog-health')"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-main">
+    <div class="header-brand">
+      <!-- Updated SVG Logo -->
+      <svg class="puro-mark" viewBox="0 0 450 350" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M 12,185 C 12,175 22,170 32,170 L 135,170 L 92,242 C 90,245 86,245 84,242 Z" fill="#002A9A" />
+        <path d="M 233,60 L 274,60 L 165,260 L 112,260 C 152,185 192,110 233,60" fill="#E41916" />
+        <path d="M 302,60 L 398,60 L 288,260 L 194,260 C 188,260 185,252 189,246 Z" fill="#002A9A" />
+      </svg>
+      <div class="header-words">
+        <div class="brand-name">Purolator</div>
+        <div class="brand-sub">Driver  Battle  League</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="settings-btn" onclick="openSettings()" title="Settings">⚙</button>
+      <div class="conn-badge" id="conn-badge">
+        <span class="conn-dot"></span>
+        <span id="conn-text">Connecting</span>
+      </div>
+    </div>
+  </div>
+  <div class="header-bar">
+    <span class="nav-item" id="nav-0">Lobby</span>
+    <span class="nav-sep">›</span>
+    <span class="nav-item" id="nav-1">Fleet Setup</span>
+    <span class="nav-sep">›</span>
+    <span class="nav-item" id="nav-2">Battle</span>
+  </div>
+</header>
+
+<div class="app">
+<div class="main" id="main">
+
+  <!-- LOBBY -->
+  <div id="lobby" class="screen active">
+    <div class="lobby-hero">
+      <div class="lobby-hero-inner">
+        <div class="lobby-eyebrow"><span class="eyebrow-dot"></span> Internal Event Edition</div>
+        <div class="lobby-title">Driver<br><em>Battle League</em></div>
+        <div class="lobby-desc">Command your Purolator fleet across Canada!</div>
+      </div>
+    </div>
+    <div class="lobby-panels">
+      <div class="lobby-panel">
+        <div class="panel-head">
+          <div class="panel-icon red">1.</div>
+          <div><div class="panel-title">Create a Room</div><div class="panel-sub">Start a new game and share the code</div></div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="c-name">Your callsign</label>
+          <input class="field-input" type="text" id="c-name" maxlength="20" placeholder="e.g. Thunder_YYZ" autocomplete="off">
+        </div>
+        <button class="btn btn-red" onclick="createRoom()">Create Game Room</button>
+        <div class="field-error" id="c-err"></div>
+      </div>
+      <div class="lobby-panel">
+        <div class="panel-head">
+          <div class="panel-icon navy">2.</div>
+          <div><div class="panel-title">Join a Room</div><div class="panel-sub">Enter the 5-letter code from your rival</div></div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="j-name">Your callsign</label>
+          <input class="field-input" type="text" id="j-name" maxlength="20" placeholder="e.g. Falcon_YVR" autocomplete="off">
+        </div>
+        <div class="field">
+          <label class="field-label" for="j-code">Room code</label>
+          <input class="field-input mono" type="text" id="j-code" maxlength="5" placeholder="XXXXX" autocomplete="off">
+        </div>
+        <button class="btn btn-navy" onclick="joinRoom()">Join Delivery Zone</button>
+        <div class="field-error" id="j-err"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WAITING -->
+  <div id="waiting" class="screen">
+    <div class="wait-card">
+      <div class="wait-icon">3.</div>
+      <div class="wait-title">Room Created</div>
+      <div class="wait-desc">Share this code with your opponent to start</div>
+      <div class="code-box">
+        <div class="code-lbl">Room Code</div>
+        <div class="code-val" id="room-code">-----</div>
+        <button class="copy-btn" id="copy-btn" onclick="copyCode()">Copy</button>
+      </div>
+      <div class="waiting-dots">
+        <div class="wi-dot"></div><div class="wi-dot"></div>
+        <span>Waiting for opponent…</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLACEMENT -->
+  <div id="placement" class="screen">
+    <div class="fleet-panel">
+      <div class="board-size-row">
+        <div class="board-size-label">Board Size (NxN)</div>
+        <div class="board-size-options">
+          <input class="field-input mono" type="number" id="board-size-input" min="6" max="15" step="1" value="10" inputmode="numeric" style="text-align:center;">
+          <button class="btn btn-outline" id="board-size-apply" style="width:auto;flex-shrink:0;" onclick="applyBoardDim()">Propose</button>
+        </div>
+        <div class="board-size-status" id="board-size-status"></div>
+      </div>
+      <div class="fleet-hd">Purolator Fleet</div>
+      <div id="ship-list"></div>
+      <div class="fleet-footer">
+        <button class="rotate-btn" id="rotate-btn" onclick="toggleOrientation()">⟳ Rotate [R] :<span id="orient-label">Horizontal</span></button>
+        <button class="btn btn-red" id="confirm-btn" onclick="confirmPlacement()" disabled>Lock In Routes</button>
+        <div class="field-error" id="place-msg" style="text-align:center;min-height:16px;"></div>
+      </div>
+    </div>
+    <div class="place-main">
+      <div class="place-label">Your territory — <strong id="place-name">YOU</strong></div>
+      <div id="place-grid-wrap"></div>
+      <div class="place-hint">Select a vehicle, click the grid to place · <kbd>R</kbd> to rotate</div>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div id="game" class="screen">
+    <div class="hud">
+      <div class="hud-player">
+        <div class="hud-av red" id="my-av">ME</div>
+        <div><div class="hud-name" id="hud-myname">—</div><div class="hud-role">Your fleet</div></div>
+      </div>
+      <div class="hud-stats">
+        <div class="hud-stat"><div class="hud-stat-label">Shots</div><div class="hud-stat-val" id="hud-shots">0</div></div>
+        <div class="hud-stat"><div class="hud-stat-label">Accuracy</div><div class="hud-stat-val" id="hud-acc">-</div></div>
+        <div class="hud-stat"><div class="hud-stat-label">Sunk</div><div class="hud-stat-val" id="hud-sunk">0</div></div>
+      </div>
+      <div class="hud-mid">
+        <div class="turn-pill theirs" id="turn-pill"><div class="turn-dot"></div><span id="turn-text">Loading…</span></div>
+      </div>
+      <div class="hud-player right">
+        <div style="text-align:right"><div class="hud-name" id="hud-oppname">—</div><div class="hud-role">Rival driver</div></div>
+        <div class="hud-av navy" id="opp-av">?</div>
+      </div>
+    </div>
+    <div class="board-panel">
+      <div class="board-lbl">Your Fleet — <strong id="my-status">Intact</strong></div>
+      <div id="my-grid-wrap"></div>
+      <div class="ship-health" id="my-health"></div>
+    </div>
+    <div class="board-panel">
+      <div class="board-lbl">Rival Territory — <strong>click to fire</strong></div>
+      <div id="enemy-grid-wrap"></div>
+      <div class="ship-health" id="enemy-health"></div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-sec">
+    <div class="sidebar-hd">
+      <span class="sidebar-hd-title">Package Tracking</span>
+      <span class="sidebar-hd-badge" id="track-badge">0</span>
+    </div>
+    <div class="track-list" id="track-list"><div class="lb-empty" style="padding:14px;">No events yet</div></div>
+  </div>
+  <div class="sidebar-sec" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+    <div class="sidebar-hd"><span class="sidebar-hd-title">Driver Rankings</span></div>
+    <div class="lb-list" id="lb-list"><div class="lb-empty">No drivers ranked yet.<br>Complete a game to appear.</div></div>
+  </div>
+</div>
+</div><!-- /app -->
+
+<button class="sidebar-toggle-fab" id="fab" onclick="toggleSidebarFab()" title="Toggle sidebar" style="display:none">📋</button>
+<div class="toast-stack" id="toast-stack"></div>
+<div class="sunk-banner" id="sunk-banner"></div>
+
+<div class="overlay" id="ov-gameover">
+  <div class="ov-card">
+    <div class="ov-icon win" id="ov-icon">🏆</div>
+    <div class="ov-title win" id="ov-title">Delivered!</div>
+    <div class="ov-sub" id="ov-sub">You intercepted the rival fleet.</div>
+    <div class="ov-stats" id="ov-stats"></div>
+    <div class="ov-actions">
+      <button class="btn btn-red" onclick="requestRematch()">🔄 Request Rematch</button>
+      <button class="btn btn-outline" onclick="location.reload()">↩ Return to Lobby</button>
+    </div>
+    <div class="ov-note" id="ov-note"></div>
+  </div>
+</div>
+
+<div class="overlay" id="ov-left">
+  <div class="ov-card">
+    <div class="ov-icon lose">🚪</div>
+    <div class="ov-title lose">Driver Bailed</div>
+    <div class="ov-sub">Your opponent disconnected from the route.</div>
+    <div class="ov-actions"><button class="btn btn-red" onclick="location.reload()">↩ Return to Lobby</button></div>
+  </div>
+</div>
+
+<script src="/js/config.js"></script>
+<script src="/js/state.js"></script>
+<script src="/js/utils.js"></script>
+<script src="/js/grid.js"></script>
+<script src="/js/settings.js"></script>
+<script src="/js/socketClient.js"></script>
+<script src="/js/lobby.js"></script>
+<script src="/js/placement.js"></script>
+<script src="/js/game.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

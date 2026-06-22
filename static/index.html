@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Forecast Tool</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="ratio_split.js"></script>
+</head>
+<body>
+<nav class="top-nav">
+  <div class="nav-logo">Forecast Tool</div>
+  <div class="nav-links">
+    <a href="/" class="nav-link active">Weekly Forecast</a>
+    <a href="/daily_page" class="nav-link">Daily Distribution</a>
+  </div>
+</nav>
+<div id="wrap">
+
+<div id="side">
+  <div>
+    <div class="sec">Load Files</div>
+    <div style="display:flex;flex-direction:column;gap:5px">
+
+      <div style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">FMR Pipeline (new)</div>
+
+      <div class="upload-wrap">
+        <div class="upload-tag" id="tag-fmr-hist"
+          style="background:#fff8f0;color:#c45000;border-color:#f5c28a;font-size:11px">
+          Historical parquet (2012-2025)
+        </div>
+        <input type="file" accept=".parquet,.csv,.xlsx" onchange="uploadFMR(this,'historical')">
+      </div>
+      <div class="upload-wrap">
+        <div class="upload-tag" id="tag-fmr-curr"
+          style="background:#f0fdf4;color:#107c10;border-color:#86efac;font-size:11px">
+          Current year CSV (Jan-last week)
+        </div>
+        <input type="file" accept=".csv,.xlsx" onchange="uploadFMR(this,'current')">
+      </div>
+      <div id="fmr-status-msg" style="font-size:10px;color:#888;padding:2px 0;min-height:14px"></div>
+
+      <div style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-top:4px">Or upload pre-processed files directly</div>
+
+      <div class="upload-wrap">
+        <div class="upload-tag actual" id="tag-actual">Upload Actual.xlsx</div>
+        <input type="file" accept=".xlsx,.xls" onchange="uploadFile(this,'actual')">
+      </div>
+      <div class="upload-wrap">
+        <div class="upload-tag forecast" id="tag-forecast">Upload Forecast.xlsx</div>
+        <input type="file" accept=".xlsx,.xls" onchange="uploadFile(this,'forecast')">
+      </div>
+      <div class="upload-wrap">
+        <div class="upload-tag" id="tag-daily" style="background:#f5f0ff;color:#5b21b6;border-color:#c4b5fd">Daily Dist. (optional)</div>
+        <input type="file" accept=".xlsx,.xls,.csv" onchange="uploadFile(this,'daily')">
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div>
+    <div class="sec">Metric</div>
+    <select id="metricSel" onchange="runChart()"><option value="">Load files first</option></select>
+  </div>
+
+  <div>
+    <div class="base-row">
+      <div>
+        <div class="sec">Base Year (YoY)</div>
+        <select id="baseYearSel" onchange="onBaseYearChange()"><option value="2025">2025</option></select>
+      </div>
+      <div>
+        <div class="sec">Forecast Year</div>
+        <select id="fcYearSel"><option value="2026">2026</option></select>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div>
+    <div class="sec">Forecast Source</div>
+    <div class="fc-src-group">
+      <div class="fc-src-btn active" id="srcOrigBtn" onclick="setForecastSource('original')">Original</div>
+      <div class="fc-src-btn prophet-btn" id="srcProphetBtn" onclick="setForecastSource('prophet')">Prophet AI</div>
+    </div>
+    <div id="prophetStatus"></div>
+    <div style="font-size:10px;color:#aaa;margin-top:3px">Prophet uses 2018–2026 actuals to fit a seasonal trend model. Runs on first use (~15s).</div>
+  </div>
+
+  <hr>
+
+  <div>
+    <div class="sec">Show on Chart</div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;margin-bottom:4px">
+      <input type="checkbox" id="show2027" checked onchange="runChart()"> Overlay 2027 Prophet forecast on chart
+    </label>
+    <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer">
+      <input type="checkbox" id="showProphet2026" onchange="runChart()"> Show 2026 Prophet on chart too
+    </label>
+  </div>
+
+  <hr>
+
+  <div>
+    <div class="sec">Division <span id="divCount" style="color:#0070c0;font-weight:700"></span></div>
+    <div class="div-grid" id="divGrid"></div>
+    <div class="row2">
+      <button class="btn sm" onclick="selAllDivisions()">All</button>
+      <button class="btn sm" onclick="clearDivisions()">Clear</button>
+    </div>
+  </div>
+
+  <div>
+    <div class="sec">Actual Years <span id="yrCount" style="color:#0070c0;font-weight:700"></span></div>
+    <div class="year-grid" id="yearGrid"></div>
+    <div class="row2">
+      <button class="btn sm" onclick="selAllYears()">All</button>
+      <button class="btn sm" onclick="clearYears()">Clear</button>
+    </div>
+  </div>
+
+  <div>
+    <div class="sec">Terminal <span id="tCount" style="color:#0070c0;font-weight:700"></span></div>
+    <input type="text" id="tSearch" placeholder="Search by number or name…" oninput="renderTerminals(this.value)" style="margin-bottom:3px">
+    <div class="filter-list" id="fl-Terminal"></div>
+    <div class="row2" style="margin-top:4px">
+      <button class="btn sm" onclick="selectAllTerminals()">All</button>
+      <button class="btn sm" onclick="clearTerminals()">Clear</button>
+    </div>
+  </div>
+
+  <hr>
+
+  <button class="btn go" id="runBtn" onclick="runChart()" disabled>Refresh Chart</button>
+  <button class="btn ex" id="exportBtn" onclick="doExport()" disabled>Export CSV</button>
+  <button class="btn" onclick="resetAll()">Reset All</button>
+
+  <hr>
+
+  <div>
+    <div class="sec">Change Log</div>
+    <div id="changeLogPanel" style="max-height:160px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:4px;background:#fff">
+      <div style="color:#aaa;font-size:11px;padding:6px 8px">No changes yet</div>
+    </div>
+  </div>
+
+  <div style="font-size:10px;color:#bbb;margin-top:auto;padding-top:8px">Forecast Review Tool</div>
+</div>
+
+<div id="main">
+  <div id="bar">
+    <strong id="ttl"></strong>
+    <span id="spin">Loading…</span>
+    <span id="stat" style="font-size:11px;color:#888"></span>
+    <div style="margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <button class="btn sm" onclick="downloadChart()" style="font-size:11px">Download Chart</button>
+      <span class="lp lp-a">Actual (prior)</span>
+      <span class="lp lp-cur">Actual 2026</span>
+      <span class="lp lp-f">Forecast 2026</span>
+      <span class="lp lp-m">Modified</span>
+      <span class="lp lp-p">Prophet 2026</span>
+      <span class="lp lp-p27">Prophet 2027</span>
+    </div>
+  </div>
+
+  <div id="chart-wrap">
+    <canvas id="ch"></canvas>
+  </div>
+
+  <div id="kpi-bar" id="kpiBar"></div>
+  <div id="kpi-sel-bar">
+    <span class="kpi-sel-label">Selection</span>
+    <div class="kpi-sel" id="ksel-weeks"><div class="kpi-val" id="ksel-wk-val">-</div><div class="kpi-lbl">Weeks</div></div>
+    <div class="kpi-sel" id="ksel-yoy-fc"><div class="kpi-val" id="ksel-fc-val">-</div><div class="kpi-lbl">Avg YoY Forecast</div></div>
+    <div class="kpi-sel" id="ksel-yoy-act"><div class="kpi-val" id="ksel-act-val">-</div><div class="kpi-lbl">Avg YoY Actual</div></div>
+    <div class="kpi-sel" id="ksel-total"><div class="kpi-val" id="ksel-tot-val">-</div><div class="kpi-lbl">Total Forecast</div></div>
+    <div style="margin-left:auto;font-size:10px;color:#666">Ctrl+Shift+Y to refresh &nbsp; <button class="btn sm" onclick="clearSel()" style="font-size:10px;padding:2px 7px">Clear selection</button></div>
+  </div>
+
+  <div id="divider"></div>
+
+  <div id="excel-bar">
+    <div id="cell-ref">No selection</div>
+    <div class="xsep"></div>
+    <button class="xbtn" onclick="selectAllCells()">Select All</button>
+    <button class="xbtn" onclick="selectValueCol()">Select Forecast Column</button>
+    <button class="xbtn" onclick="clearSel()">Clear Selection</button>
+    <div class="xsep"></div>
+    <button class="xbtn danger" onclick="revertSelected()">Revert Selected</button>
+    <button class="xbtn danger" onclick="revertAll()">Revert All</button>
+    <div class="op-group">
+      <label>Operation&nbsp;</label>
+      <select class="op-sel" id="opSel">
+        <option value="+">+ Add</option>
+        <option value="-">− Subtract</option>
+        <option value="*">× Multiply</option>
+        <option value="/">÷ Divide</option>
+        <option value="%+" selected>% Increase</option>
+        <option value="%-">% Decrease</option>
+        <option value="=">=Set to</option>
+      </select>
+      <input class="op-num" type="number" id="opVal" value="0" onkeydown="if(event.key==='Enter')applyOp()">
+      <button class="op-apply" onclick="applyOp()" title="Apply (Enter, or Ctrl+Enter from anywhere)">Apply</button>
+    </div>
+  </div>
+
+  <div id="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortBy('week')" id="th-week">Week</th>
+          <th onclick="sortBy('base')" id="th-base">Base Year</th>
+          <th onclick="sortBy('act2026')" id="th-act2026">Actual 2026</th>
+          <th onclick="sortBy('value')" id="th-value">Forecast</th>
+          <th onclick="sortBy('yoy_act')" id="th-yoy_act">YoY Actual %</th>
+          <th onclick="sortBy('yoy_fc')" id="th-yoy_fc">YoY Forecast %</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="tb">
+        <tr><td colspan="7" style="color:#bbb;padding:30px;text-align:center">
+          Upload both files, pick your filters, then Refresh Chart.
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

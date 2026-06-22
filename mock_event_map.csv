@@ -1,0 +1,10 @@
+Event.Name,Year,Week,Week.Type,Base.Year.1,Base.Week.1,Base.Year.2,Base.Week.2,Base.Year.3,Base.Week.3
+Canada Day,2026,27,event,2015,27,2020,28,,
+Labour Day,2026,36,event,2015,36,2019,36,,
+Thanksgiving,2026,41,event,2015,41,2020,42,2022.0,41.0
+Remembrance Day,2026,45,event,2019,45,2024,45,,
+Peak Week 1,2026,47,event,2024,47,2023,47,,
+Peak Week 2,2026,48,event,2024,48,2023,48,,
+Peak Week 3,2026,49,event,2024,49,2023,49,,
+Christmas Week 1,2026,51,event,2015,51,2020,51,2022.0,51.0
+Christmas Week 2,2026,52,event,2015,52,2020,52,,
